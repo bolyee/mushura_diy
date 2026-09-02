@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>소리 비교 — 간단 청취 테스트</title>
+<style>
+:root{
+  color-scheme: light;
+  --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#f2f1ee;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --border:rgba(11,11,11,.12);
+  --accent:#2a78d6; --ref:#1baf7a; --good:#0ca30c;
+  --sh:0 1px 2px rgba(11,11,11,.06), 0 4px 14px rgba(11,11,11,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+    --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --border:rgba(255,255,255,.14);
+    --accent:#3987e5; --ref:#199e70;
+    --sh:0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--page); color:var(--ink);
+  font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  font-size:15px; line-height:1.6; -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1100px; margin:0 auto; padding:20px 16px 64px}
+h1{font-size:20px; margin:0 0 2px}
+h2{font-size:17px; margin:0 0 10px}
+.sub{color:var(--muted); font-size:13.5px; margin:0 0 18px}
+.small{font-size:12.5px; color:var(--ink-2)}
+button{font:inherit}
+.btn{
+  border:1px solid var(--border); background:var(--surface); color:var(--ink);
+  padding:8px 14px; border-radius:9px; cursor:pointer; font-size:14px; font-weight:500;
+  display:inline-flex; align-items:center; gap:6px
+}
+.btn:hover:not(:disabled){background:var(--surface-2)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.sm{padding:5px 10px; font-size:12.5px}
+.btn.ghost{border-style:dashed; color:var(--ink-2)}
+input[type=text]{
+  font:inherit; padding:5px 8px; border:1px solid var(--border); border-radius:7px;
+  background:var(--surface); color:var(--ink); width:100%
+}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.hidden{display:none !important}
+
+/* 업로드 */
+#drop{
+  border:2px dashed var(--border); border-radius:14px; padding:26px 18px; text-align:center;
+  background:var(--surface); cursor:pointer; transition:border-color .12s, background .12s
+}
+#drop.over{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 8%, transparent)}
+#drop b{display:block; font-size:16px; margin-bottom:2px}
+#drop span{color:var(--muted); font-size:13px}
+
+/* 카드 */
+.cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:16px 0}
+.card{
+  background:var(--surface); border:1.5px solid var(--border); border-radius:14px;
+  padding:14px; box-shadow:var(--sh); display:flex; flex-direction:column; gap:10px
+}
+.card.playing{border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%, transparent)}
+.card.isref{border-color:var(--ref)}
+.card-top{display:flex; gap:8px; align-items:center}
+.badge{
+  font-size:11px; font-weight:700; padding:2px 7px; border-radius:99px;
+  border:1px solid var(--ref); color:var(--ref); white-space:nowrap
+}
+.card .play{width:100%; justify-content:center; font-size:15px; padding:10px}
+.card.playing .play{background:var(--accent); border-color:var(--accent); color:#fff}
+.bar{height:8px; background:var(--surface-2); border-radius:99px; overflow:hidden; cursor:pointer}
+.bar i{display:block; height:100%; background:var(--accent); width:0}
+.time{display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums}
+.score{
+  font-size:26px; font-weight:700; text-align:center; font-variant-numeric:tabular-nums; line-height:1.2
+}
+.score.none{font-size:15px; font-weight:500; color:var(--muted); padding:5px 0}
+.grade{text-align:center; font-size:12px; color:var(--ink-2); margin-top:-6px}
+input[type=range]{width:100%; accent-color:var(--accent); margin:0}
+.scale{display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:-4px}
+.cardfoot{display:flex; justify-content:space-between; align-items:center; gap:6px}
+
+/* 결과 */
+.panel{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; box-shadow:var(--sh); margin:16px 0}
+.rank{display:flex; flex-direction:column; gap:10px; margin-top:6px}
+.rank-row{display:grid; grid-template-columns:26px minmax(80px,150px) 1fr 52px; gap:10px; align-items:center}
+.rank-row .n{font-weight:700; color:var(--muted); text-align:right; font-size:13px}
+.rank-row .nm{font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.rank-bar{background:var(--surface-2); border-radius:6px; height:22px; overflow:hidden}
+.rank-bar i{display:block; height:100%; background:var(--accent); border-radius:5px; min-width:3px}
+.rank-bar i.ref{background:var(--ref)}
+.rank-row .v{font-weight:700; text-align:right; font-variant-numeric:tabular-nums; font-size:14px}
+.legend{display:flex; gap:14px; font-size:12px; color:var(--ink-2); margin-bottom:10px}
+.legend i{width:11px; height:11px; border-radius:3px; display:inline-block; margin-right:5px; vertical-align:-1px}
+table.t{border-collapse:collapse; width:100%; font-size:13px; font-variant-numeric:tabular-nums}
+table.t th,table.t td{border-bottom:1px solid var(--grid); padding:6px 9px; text-align:right; white-space:nowrap}
+table.t th:first-child,table.t td:first-child{text-align:left}
+table.t th{color:var(--ink-2); font-size:12px}
+.tbl-wrap{overflow-x:auto}
+@media (max-width:560px){
+  .cards{grid-template-columns:1fr}
+  .rank-row{grid-template-columns:22px minmax(70px,110px) 1fr 46px; gap:8px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>소리 비교</h1>
+  <p class="sub">파일 올리고, 들어보고, 점수 매기면 끝.</p>
+
+  <div id="drop">
+    <b>오디오 파일을 끌어다 놓으세요</b>
+    <span>또는 클릭해서 여러 개 한 번에 선택 (여러 번 나눠 올려도 됩니다)</span>
+    <input type="file" id="picker" accept="audio/*" multiple class="hidden">
+  </div>
+
+  <div id="controls" class="row hidden" style="margin-top:14px">
+    <label class="row small" style="gap:6px"><input type="checkbox" id="loopChk" checked> 반복 재생</label>
+    <span class="small" id="count"></span>
+    <span style="flex:1"></span>
+    <button class="btn sm" id="btnClear">전부 지우기</button>
+    <button class="btn primary" id="btnResult">결과 보기</button>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="panel hidden" id="saveBox">
+    <div class="row">
+      <b>여러 명이 돌아가며 평가</b>
+      <span class="small">지금 매긴 점수를 이름 붙여 저장하고, 다음 사람이 이어서 매길 수 있습니다.</span>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <input type="text" id="raterName" placeholder="이름 (예: 지훈)" style="max-width:200px">
+      <button class="btn" id="btnSaveRound">이 점수 저장하고 다음 사람</button>
+      <span class="small" id="savedInfo"></span>
+    </div>
+  </div>
+
+  <div class="panel hidden" id="results">
+    <div class="row" style="margin-bottom:6px">
+      <h2 style="margin:0">결과</h2>
+      <span style="flex:1"></span>
+      <button class="btn sm" id="btnPng">PNG 저장</button>
+      <button class="btn sm" id="btnTxt">텍스트 복사</button>
+      <button class="btn sm" id="btnAgain">다시 하기</button>
+    </div>
+    <div id="resultBody"></div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const el = (t, a, ...k) => {
+  const n = document.createElement(t);
+  if (a) for (const p in a) {
+    if (p === 'class') n.className = a[p];
+    else if (p === 'text') n.textContent = a[p];
+    else if (p === 'html') n.innerHTML = a[p];
+    else if (p.startsWith('on')) n.addEventListener(p.slice(2), a[p]);
+    else if (a[p] !== false && a[p] != null) n.setAttribute(p, a[p]);
+  }
+  for (const c of k.flat()) if (c != null && c !== false)
+    n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  return n;
+};
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const mmss = s => (isFinite(s) ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : '0:00');
+
+/* ---------- 척도 (정식 버전과 동일한 5단계) ---------- */
+const GRADES = [
+  { lo: 80, name: 'Excellent', ko: '아주 좋음' },
+  { lo: 60, name: 'Good',      ko: '좋음' },
+  { lo: 40, name: 'Fair',      ko: '보통' },
+  { lo: 20, name: 'Poor',      ko: '나쁨' },
+  { lo: 0,  name: 'Bad',       ko: '아주 나쁨' }
+];
+const gradeOf = v => GRADES.find(g => v >= g.lo) || GRADES[GRADES.length - 1];
+
+/* ---------- 상태 ---------- */
+let items = [];        // {id, name, url, audio, score|null, isRef}
+let rounds = [];       // [{rater, scores:{id:score}}]
+let uid = 0;
+let playingId = null;
+
+/* ---------- 순위 계산 (순수 함수) ---------- */
+function rankOf(scoreMap, list) {
+  return list
+    .filter(it => typeof scoreMap[it.id] === 'number')
+    .map(it => ({ id: it.id, name: it.name, isRef: it.isRef, score: scoreMap[it.id] }))
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+}
+function averageScores(roundList, list) {
+  const out = {};
+  for (const it of list) {
+    const vals = roundList.map(r => r.scores[it.id]).filter(v => typeof v === 'number');
+    if (vals.length) out[it.id] = vals.reduce((a, b) => a + b, 0) / vals.length;
+  }
+  return out;
+}
+const currentScores = () => Object.fromEntries(items.filter(i => i.score != null).map(i => [i.id, i.score]));
+
+/* ---------- 업로드 ---------- */
+function addFiles(fileList) {
+  const files = Array.from(fileList).filter(f => f.type.startsWith('audio/') || /\.(wav|mp3|m4a|aac|ogg|opus|flac|webm)$/i.test(f.name));
+  if (!files.length) return;
+  for (const f of files) {
+    const url = URL.createObjectURL(f);
+    const audio = new Audio(url);
+    audio.preload = 'metadata';
+    audio.loop = $('#loopChk').checked;
+    const item = {
+      id: 'a' + (++uid),
+      name: f.name.replace(/\.[^.]+$/, ''),
+      url, audio, score: null, isRef: false
+    };
+    audio.addEventListener('ended', () => { if (playingId === item.id) setPlaying(null); });
+    // 리스너는 여기서 한 번만 등록하고, 화면 요소는 render() 가 갈아끼운다 (중복 등록 방지)
+    audio.addEventListener('timeupdate', () => {
+      if (!item._fill || !audio.duration) return;
+      item._fill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+      item._tCur.textContent = mmss(audio.currentTime);
+    });
+    audio.addEventListener('loadedmetadata', () => { if (item._tDur) item._tDur.textContent = mmss(audio.duration); });
+    items.push(item);
+  }
+  render();
+}
+const drop = $('#drop');
+drop.addEventListener('click', () => $('#picker').click());
+$('#picker').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => {
+  e.preventDefault();
+  if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+});
+
+/* ---------- 재생 ---------- */
+function setPlaying(id) {
+  playingId = id;
+  for (const it of items) {
+    const card = document.getElementById('card-' + it.id);
+    if (card) card.classList.toggle('playing', it.id === id);
+    const btn = document.getElementById('play-' + it.id);
+    if (btn) btn.textContent = it.id === id ? '❚❚ 정지' : '▶ 재생';
+  }
+}
+function play(item) {
+  if (playingId === item.id) { item.audio.pause(); setPlaying(null); return; }
+  for (const it of items) if (it !== item) { it.audio.pause(); }
+  item.audio.loop = $('#loopChk').checked;
+  item.audio.play().catch(() => {});
+  setPlaying(item.id);
+}
+
+/* ---------- 카드 렌더 ---------- */
+function render() {
+  const host = $('#cards');
+  host.innerHTML = '';
+  $('#controls').classList.toggle('hidden', !items.length);
+  $('#saveBox').classList.toggle('hidden', !items.length);
+  $('#count').textContent = items.length ? `${items.length}개 · 점수 매김 ${items.filter(i => i.score != null).length}개` : '';
+  drop.querySelector('b').textContent = items.length ? '＋ 파일 더 추가' : '오디오 파일을 끌어다 놓으세요';
+
+  for (const it of items) {
+    const card = el('div', { class: 'card' + (it.isRef ? ' isref' : '') + (playingId === it.id ? ' playing' : ''), id: 'card-' + it.id });
+
+    const nameIn = el('input', { type: 'text', value: it.name, oninput: e => { it.name = e.target.value; } });
+    const top = el('div', { class: 'card-top' }, nameIn);
+    if (it.isRef) top.appendChild(el('span', { class: 'badge', text: '기준' }));
+    card.appendChild(top);
+
+    const playBtn = el('button', { class: 'btn play', id: 'play-' + it.id, text: playingId === it.id ? '❚❚ 정지' : '▶ 재생',
+      onclick: () => play(it) });
+    card.appendChild(playBtn);
+
+    const fill = el('i');
+    const bar = el('div', { class: 'bar', onclick: e => {
+      const r = e.currentTarget.getBoundingClientRect();
+      if (it.audio.duration) it.audio.currentTime = clamp((e.clientX - r.left) / r.width, 0, 1) * it.audio.duration;
+    } }, fill);
+    const tCur = el('span', { text: '0:00' }), tDur = el('span', { text: '0:00' });
+    card.appendChild(bar);
+    card.appendChild(el('div', { class: 'time' }, tCur, tDur));
+    it._fill = fill; it._tCur = tCur; it._tDur = tDur;          // 현재 카드의 표시 요소로 교체
+    if (it.audio.duration) {
+      tDur.textContent = mmss(it.audio.duration);
+      tCur.textContent = mmss(it.audio.currentTime);
+      fill.style.width = (it.audio.currentTime / it.audio.duration * 100) + '%';
+    }
+
+    const scoreEl = el('div', { class: it.score == null ? 'score none' : 'score', text: it.score == null ? '아직 점수 없음' : String(it.score) });
+    const gradeEl = el('div', { class: 'grade', text: it.score == null ? ' ' : gradeOf(it.score).name + ' · ' + gradeOf(it.score).ko });
+    const slider = el('input', { type: 'range', min: 0, max: 100, step: 1, value: it.score == null ? 50 : it.score });
+    const apply = v => {
+      it.score = +v;
+      scoreEl.textContent = it.score; scoreEl.className = 'score';
+      gradeEl.textContent = gradeOf(it.score).name + ' · ' + gradeOf(it.score).ko;
+      $('#count').textContent = `${items.length}개 · 점수 매김 ${items.filter(i => i.score != null).length}개`;
+    };
+    slider.addEventListener('input', e => apply(e.target.value));
+    card.appendChild(scoreEl);
+    card.appendChild(gradeEl);
+    card.appendChild(slider);
+    card.appendChild(el('div', { class: 'scale' }, el('span', { text: '0 Bad' }), el('span', { text: 'Excellent 100' })));
+
+    const refBtn = el('button', { class: 'btn sm' + (it.isRef ? '' : ' ghost'), text: it.isRef ? '기준 해제' : '기준으로',
+      onclick: () => { const was = it.isRef; items.forEach(x => x.isRef = false); it.isRef = !was; render(); } });
+    const delBtn = el('button', { class: 'btn sm ghost', text: '삭제',
+      onclick: () => { it.audio.pause(); URL.revokeObjectURL(it.url); items = items.filter(x => x !== it);
+        if (playingId === it.id) playingId = null; render(); } });
+    card.appendChild(el('div', { class: 'cardfoot' }, refBtn, delBtn));
+
+    host.appendChild(card);
+  }
+}
+
+/* ---------- 결과 ---------- */
+function barBlock(list, opts) {
+  const box = el('div', { class: 'rank' });
+  const max = Math.max(100, ...list.map(r => r.score));
+  list.forEach((r, i) => {
+    box.appendChild(el('div', { class: 'rank-row' },
+      el('div', { class: 'n', text: (i + 1) + '.' }),
+      el('div', { class: 'nm', title: r.name, text: r.name }),
+      el('div', { class: 'rank-bar' }, el('i', { class: r.isRef ? 'ref' : '', style: `width:${r.score / max * 100}%` })),
+      el('div', { class: 'v', text: (opts && opts.decimal) ? r.score.toFixed(1) : String(r.score) })));
+  });
+  return box;
+}
+function showResults() {
+  const body = $('#resultBody');
+  body.innerHTML = '';
+  const cur = rankOf(currentScores(), items);
+
+  if (rounds.length) {
+    const avg = rankOf(averageScores(rounds, items), items);
+    body.appendChild(el('h2', { text: `전체 평균 (${rounds.length}명)` }));
+    body.appendChild(legend());
+    body.appendChild(barBlock(avg, { decimal: true }));
+
+    const t = el('table', { class: 't' });
+    t.appendChild(el('thead', null, el('tr', null, el('th', { text: '항목' }),
+      ...rounds.map(r => el('th', { text: r.rater })), el('th', { text: '평균' }))));
+    const tb = el('tbody');
+    for (const row of avg) {
+      tb.appendChild(el('tr', null, el('td', { text: row.name }),
+        ...rounds.map(r => el('td', { text: typeof r.scores[row.id] === 'number' ? String(r.scores[row.id]) : '–' })),
+        el('td', { text: row.score.toFixed(1) })));
+    }
+    t.appendChild(tb);
+    body.appendChild(el('div', { class: 'tbl-wrap', style: 'margin-top:14px' }, t));
+    if (cur.length) {
+      body.appendChild(el('h2', { text: '저장 안 한 현재 점수', style: 'margin-top:22px' }));
+      body.appendChild(barBlock(cur));
+    }
+  } else if (cur.length) {
+    body.appendChild(legend());
+    body.appendChild(barBlock(cur));
+    const unrated = items.length - cur.length;
+    if (unrated) body.appendChild(el('p', { class: 'small', style: 'margin-top:12px',
+      text: `점수를 안 매긴 항목 ${unrated}개는 순위에서 빠졌습니다.` }));
+  } else {
+    body.appendChild(el('p', { class: 'small', text: '아직 점수를 매긴 항목이 없습니다. 슬라이더를 움직여 점수를 매겨 보세요.' }));
+  }
+  $('#results').classList.remove('hidden');
+  $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function legend() {
+  return el('div', { class: 'legend' },
+    el('span', null, el('i', { style: 'background:var(--accent)' }), '비교 대상'),
+    el('span', null, el('i', { style: 'background:var(--ref)' }), '기준으로 지정한 소리'));
+}
+
+/* ---------- 내보내기 ---------- */
+function resultRows() {
+  return rounds.length ? rankOf(averageScores(rounds, items), items) : rankOf(currentScores(), items);
+}
+function asText() {
+  const rows = resultRows();
+  if (!rows.length) return '점수 없음';
+  const head = rounds.length ? `소리 비교 결과 — 평균 (${rounds.length}명)` : '소리 비교 결과';
+  const lines = rows.map((r, i) => `${i + 1}. ${r.name}${r.isRef ? ' (기준)' : ''} — ${rounds.length ? r.score.toFixed(1) : r.score}점`);
+  return [head, new Date().toLocaleString('ko-KR'), '', ...lines].join('\n');
+}
+function exportPng() {
+  const rows = resultRows();
+  if (!rows.length) { alert('점수를 매긴 항목이 없습니다.'); return; }
+  const dpr = 2, W = 720, rowH = 44, H = 108 + rows.length * rowH + 24;
+  const cv = document.createElement('canvas');
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext('2d');
+  g.scale(dpr, dpr);
+  const style = getComputedStyle(document.body);
+  const c = n => style.getPropertyValue(n).trim();
+  g.fillStyle = c('--surface'); g.fillRect(0, 0, W, H);
+  g.fillStyle = c('--ink');
+  g.font = '700 20px system-ui, sans-serif';
+  g.fillText(rounds.length ? `소리 비교 결과 — 평균 (${rounds.length}명)` : '소리 비교 결과', 28, 44);
+  g.fillStyle = c('--muted'); g.font = '13px system-ui, sans-serif';
+  g.fillText(new Date().toLocaleString('ko-KR'), 28, 68);
+
+  const max = Math.max(100, ...rows.map(r => r.score));
+  const barX = 260, barW = W - barX - 76;
+  rows.forEach((r, i) => {
+    const y = 104 + i * rowH;
+    g.fillStyle = c('--muted'); g.font = '13px system-ui, sans-serif';
+    g.fillText((i + 1) + '.', 28, y + 16);
+    g.fillStyle = c('--ink'); g.font = '14px system-ui, sans-serif';
+    let nm = r.name + (r.isRef ? ' (기준)' : '');
+    while (g.measureText(nm).width > barX - 62 && nm.length > 4) nm = nm.slice(0, -2) + '…';
+    g.fillText(nm, 52, y + 16);
+    g.fillStyle = c('--surface-2');
+    g.fillRect(barX, y, barW, 22);
+    g.fillStyle = r.isRef ? c('--ref') : c('--accent');
+    g.fillRect(barX, y, Math.max(3, barW * r.score / max), 22);
+    g.fillStyle = c('--ink'); g.font = '700 14px system-ui, sans-serif';
+    g.fillText(rounds.length ? r.score.toFixed(1) : String(r.score), barX + barW + 12, y + 16);
+  });
+  cv.toBlob(b => {
+    const a = el('a', { href: URL.createObjectURL(b), download: 'sound_compare_' + Date.now() + '.png' });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+}
+
+/* ---------- 버튼 ---------- */
+$('#loopChk').addEventListener('change', e => { for (const it of items) it.audio.loop = e.target.checked; });
+$('#btnResult').addEventListener('click', showResults);
+$('#btnSaveRound').addEventListener('click', () => {
+  const scores = currentScores();
+  if (!Object.keys(scores).length) { alert('저장할 점수가 없습니다.'); return; }
+  const name = ($('#raterName').value || '').trim() || ('평가자 ' + (rounds.length + 1));
+  rounds.push({ rater: name, scores });
+  items.forEach(i => i.score = null);
+  $('#raterName').value = '';
+  $('#savedInfo').textContent = `저장됨: ${rounds.map(r => r.rater).join(', ')}`;
+  render();
+  if (!$('#results').classList.contains('hidden')) showResults();
+  alert(`"${name}" 점수 저장 완료. 다음 사람이 점수를 매기면 됩니다.`);
+});
+$('#btnClear').addEventListener('click', () => {
+  if (items.length && !confirm('올린 파일과 점수를 모두 지웁니다. 계속할까요?')) return;
+  items.forEach(i => { i.audio.pause(); URL.revokeObjectURL(i.url); });
+  items = []; playingId = null;
+  render();
+  $('#results').classList.add('hidden');
+});
+$('#btnAgain').addEventListener('click', () => {
+  if (!confirm('점수와 저장된 기록을 초기화합니다. 파일은 그대로 둡니다.')) return;
+  items.forEach(i => i.score = null);
+  rounds = [];
+  $('#savedInfo').textContent = '';
+  $('#results').classList.add('hidden');
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('#btnPng').addEventListener('click', exportPng);
+$('#btnTxt').addEventListener('click', async () => {
+  const txt = asText();
+  try { await navigator.clipboard.writeText(txt); $('#btnTxt').textContent = '복사됨 ✓';
+        setTimeout(() => $('#btnTxt').textContent = '텍스트 복사', 1500); }
+  catch (e) { prompt('아래 내용을 복사하세요', txt); }
+});
+// 스페이스바로 현재 카드 재생/정지
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space' && e.target.tagName !== 'INPUT' && items.length) {
+    e.preventDefault();
+    const it = items.find(x => x.id === playingId) || items[0];
+    play(it);
+  }
+});
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,2138 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MUSHRA 청취 테스트 (ITU-R BS.1534-3)</title>
+<style>
+/* ============================================================
+   토큰 (라이트/다크). 차트 색은 dataviz 검증 통과 조합:
+   blue #2a78d6 / orange #eb6834 / aqua #1baf7a (라이트)
+   blue #3987e5 / orange #d95926 / aqua #199e70 (다크)
+   ============================================================ */
+:root{
+  color-scheme: light;
+  --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#f2f1ee;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.12);
+  --accent:#2a78d6; --accent-ink:#fff;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --good-text:#006300;
+  --c-sys:#2a78d6; --c-anchor:#eb6834; --c-ref:#1baf7a;
+  --radius:10px; --sh:0 1px 2px rgba(11,11,11,.06), 0 4px 14px rgba(11,11,11,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+    --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.14);
+    --accent:#3987e5;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+    --good-text:#0ca30c;
+    --c-sys:#3987e5; --c-anchor:#d95926; --c-ref:#199e70;
+    --sh:0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+  --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.14);
+  --accent:#3987e5; --good-text:#0ca30c;
+  --c-sys:#3987e5; --c-anchor:#d95926; --c-ref:#199e70;
+  --sh:0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--page); color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  font-size:15px; line-height:1.6; -webkit-text-size-adjust:100%;
+}
+h1,h2,h3,h4{line-height:1.3; margin:0 0 .4em}
+h1{font-size:19px} h2{font-size:17px} h3{font-size:15px} h4{font-size:14px}
+p{margin:.3em 0 .7em}
+a{color:var(--accent)}
+small,.small{font-size:12.5px; color:var(--ink-2)}
+.muted{color:var(--muted)}
+code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;
+  background:var(--surface-2); padding:1px 5px; border-radius:5px}
+hr{border:0;border-top:1px solid var(--grid); margin:18px 0}
+
+/* ---------- 레이아웃 ---------- */
+.wrap{max-width:1180px; margin:0 auto; padding:0 16px 80px}
+header.top{
+  position:sticky; top:0; z-index:50; background:var(--surface);
+  border-bottom:1px solid var(--border); box-shadow:var(--sh);
+}
+.top-inner{max-width:1180px; margin:0 auto; padding:10px 16px}
+.top-row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+.brand{font-weight:700; font-size:15px; letter-spacing:-.01em; white-space:nowrap}
+.brand span{font-weight:400; color:var(--muted); font-size:12.5px}
+.steps{display:flex; gap:6px; flex-wrap:wrap; margin-left:auto}
+.step-chip{
+  display:flex; align-items:center; gap:6px; font-size:12.5px; padding:4px 10px;
+  border-radius:999px; border:1px solid var(--border); color:var(--ink-2);
+  background:var(--surface); white-space:nowrap;
+}
+.step-chip .n{
+  width:18px;height:18px;border-radius:50%;background:var(--surface-2);color:var(--ink-2);
+  display:grid;place-items:center;font-size:11px;font-weight:700
+}
+.step-chip.done{border-color:var(--good); color:var(--good-text)}
+.step-chip.done .n{background:var(--good); color:#fff}
+.step-chip.active{background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600}
+.step-chip.active .n{background:rgba(255,255,255,.25); color:#fff}
+.banner{
+  margin-top:10px; padding:10px 12px; border-radius:var(--radius);
+  background:var(--surface-2); border:1px solid var(--border); font-size:13.5px; color:var(--ink-2)
+}
+.banner b{color:var(--ink)}
+
+/* ---------- 카드 ---------- */
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px; margin:16px 0; box-shadow:var(--sh)
+}
+.card h2{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.card > h2:first-child{margin-top:0}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.row.tight{gap:6px}
+.spread{display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px}
+
+/* ---------- 컨트롤 ---------- */
+button{font:inherit}
+.btn{
+  appearance:none; border:1px solid var(--border); background:var(--surface); color:var(--ink);
+  padding:7px 13px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:500;
+  display:inline-flex; align-items:center; gap:6px; transition:background .12s,border-color .12s
+}
+.btn:hover:not(:disabled){background:var(--surface-2)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08); background:var(--accent)}
+.btn.danger{border-color:var(--critical); color:var(--critical)}
+.btn.sm{padding:4px 9px; font-size:12.5px}
+.btn.icon{padding:6px 9px}
+input[type=text],input[type=number],select{
+  font:inherit; padding:6px 9px; border:1px solid var(--border); border-radius:8px;
+  background:var(--surface); color:var(--ink); max-width:100%
+}
+input[type=file]{font-size:12.5px; max-width:100%}
+label.chk{display:flex; gap:8px; align-items:flex-start; cursor:pointer; padding:6px 0; font-size:14px}
+label.chk input{margin-top:4px; flex:none}
+.pill{
+  display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600;
+  padding:2px 8px; border-radius:999px; border:1px solid var(--border); color:var(--ink-2);
+  background:var(--surface-2); white-space:nowrap
+}
+.pill.ok{color:var(--good-text); border-color:var(--good)}
+.pill.warn{color:var(--ink); border-color:var(--warn); background:color-mix(in srgb, var(--warn) 16%, transparent)}
+.pill.bad{color:var(--critical); border-color:var(--critical)}
+.pill.info{color:var(--accent); border-color:var(--accent)}
+
+/* 용어 툴팁 */
+.term{border-bottom:1px dotted var(--muted); cursor:help; position:relative}
+.term:hover::after,.term:focus::after{
+  content:attr(data-tip); position:absolute; left:0; top:calc(100% + 6px); z-index:60;
+  width:min(320px,72vw); background:var(--ink); color:var(--page); font-size:12.5px; line-height:1.5;
+  padding:8px 10px; border-radius:8px; box-shadow:var(--sh); font-weight:400; white-space:normal
+}
+.note{
+  border-left:3px solid var(--accent); background:var(--surface-2); padding:9px 12px;
+  border-radius:0 8px 8px 0; font-size:13px; color:var(--ink-2); margin:10px 0
+}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--critical)}
+.note.ok{border-left-color:var(--good)}
+.note b{color:var(--ink)}
+
+/* ---------- 업로드 매트릭스 ---------- */
+.matrix-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius)}
+table.matrix{border-collapse:collapse; width:100%; min-width:560px; font-size:13px}
+table.matrix th,table.matrix td{border:1px solid var(--grid); padding:7px 9px; vertical-align:top; text-align:left}
+table.matrix thead th{background:var(--surface-2); position:sticky; top:0; z-index:1; font-size:12.5px}
+table.matrix td.exc{background:var(--surface-2); font-weight:600; min-width:150px}
+.cell-file{display:flex; flex-direction:column; gap:4px; min-width:170px}
+.cell-file .fname{font-size:11.5px; color:var(--ink-2); word-break:break-all}
+.drop{
+  border:1px dashed var(--border); border-radius:8px; padding:6px; text-align:center;
+  font-size:12px; color:var(--muted); cursor:pointer
+}
+.drop.filled{border-style:solid; border-color:var(--good); color:var(--good-text)}
+.drop.dragover{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 10%, transparent)}
+
+/* ---------- 데이터 테이블 ---------- */
+.tbl-wrap{overflow-x:auto; margin:10px 0}
+table.data{border-collapse:collapse; width:100%; font-size:13px; font-variant-numeric:tabular-nums}
+table.data th,table.data td{border-bottom:1px solid var(--grid); padding:6px 10px; text-align:left; white-space:nowrap}
+table.data th{color:var(--ink-2); font-weight:600; font-size:12.5px; background:var(--surface-2)}
+table.data td.num,table.data th.num{text-align:right}
+table.data tr.flag td{background:color-mix(in srgb,var(--warn) 14%, transparent)}
+
+/* ---------- 트레이닝 그리드 ---------- */
+.tgrid{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+.tbtn{
+  min-width:56px; height:44px; border-radius:9px; border:1px solid var(--border);
+  background:var(--surface); color:var(--ink); cursor:pointer; font-weight:600; font-size:14px
+}
+.tbtn:hover{background:var(--surface-2)}
+.tbtn.playing{background:var(--accent); border-color:var(--accent); color:#fff}
+.tbtn.ref{border-color:var(--c-ref); color:var(--c-ref); font-weight:700}
+.tbtn.ref.playing{background:var(--c-ref); color:#fff}
+
+/* ---------- 파형/트랜스포트 ---------- */
+/* 재생 진행 표시줄 (파형 없음 — 시각 정보로 채점이 오염되지 않도록 의도적으로 단순화) */
+.prog-row{display:flex; align-items:center; gap:12px}
+.prog{
+  position:relative; flex:1; height:18px; background:var(--surface-2);
+  border:1px solid var(--border); border-radius:9px; overflow:hidden;
+  cursor:ew-resize; touch-action:none
+}
+.prog i{position:absolute; top:0; bottom:0; display:block}
+.prog .fill{left:0; width:0; background:color-mix(in srgb, var(--accent) 30%, transparent)}
+.prog .region{
+  background:color-mix(in srgb, var(--c-anchor) 16%, transparent);
+  border-left:2px solid var(--c-anchor); border-right:2px solid var(--c-anchor)
+}
+.prog .head{width:2px; background:var(--ink); left:0; display:none}
+.prog-time{font-size:12.5px; color:var(--ink-2); font-variant-numeric:tabular-nums; white-space:nowrap; min-width:88px; text-align:right}
+.wave-legend{display:flex; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--ink-2); margin-top:6px}
+
+/* ---------- 채점 슬라이더 ---------- */
+.grade-area{display:flex; gap:12px; align-items:stretch; overflow-x:auto; padding:6px 2px 10px}
+.scale-labels{
+  flex:none; width:74px; height:340px; position:relative; font-size:11.5px; color:var(--ink-2);
+  border-right:1px solid var(--grid)
+}
+.scale-labels div{position:absolute; right:8px; transform:translateY(-50%); white-space:nowrap}
+.scale-labels div b{color:var(--ink)}
+.sl-col{
+  flex:none; width:82px; display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:8px 4px; border:1px solid transparent; border-radius:10px
+}
+.sl-col.current{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 7%, transparent)}
+.sl-score{font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; height:22px}
+.sl-score.unrated{color:var(--muted); font-weight:500}
+.sl-track{height:250px; display:grid; place-items:center; position:relative; width:100%}
+.sl-ticks{position:absolute; inset:0; pointer-events:none}
+.sl-ticks i{position:absolute; left:0; right:0; height:1px; background:var(--grid)}
+input[type=range].vert{
+  -webkit-appearance:slider-vertical; appearance:slider-vertical;
+  writing-mode:vertical-lr; direction:rtl;
+  width:26px; height:250px; margin:0; accent-color:var(--accent); cursor:pointer
+}
+input[type=range].vert:disabled{cursor:not-allowed; opacity:.5}
+.sl-play{width:100%}
+.sl-name{font-size:12px; color:var(--ink-2); text-align:center; word-break:keep-all}
+.played-dot{width:7px;height:7px;border-radius:50%;background:var(--grid);display:inline-block}
+.played-dot.on{background:var(--good)}
+
+/* ---------- 차트 ---------- */
+.chart{width:100%; overflow-x:auto}
+.chart svg{display:block}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-2); margin:4px 0 10px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+.tip{
+  position:fixed; z-index:80; pointer-events:none; background:var(--ink); color:var(--page);
+  padding:7px 9px; border-radius:8px; font-size:12px; line-height:1.5; box-shadow:var(--sh);
+  opacity:0; transition:opacity .1s; max-width:260px; font-variant-numeric:tabular-nums
+}
+.tip.on{opacity:1}
+
+.progress{height:6px; background:var(--surface-2); border-radius:99px; overflow:hidden; margin:8px 0}
+.progress i{display:block; height:100%; background:var(--accent); width:0; transition:width .2s}
+.hidden{display:none !important}
+.sec{display:none}
+.sec.on{display:block}
+.f-right{margin-left:auto}
+@media (max-width:640px){
+  .scale-labels{width:60px; font-size:10.5px}
+  .sl-col{width:72px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="top-row">
+      <div class="brand">MUSHRA 청취 테스트 <span>ITU-R BS.1534-3</span></div>
+      <nav class="steps" id="steps"></nav>
+    </div>
+    <div class="banner" id="banner"></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ============ 1단계: 업로드 ============ -->
+<section class="sec" id="sec-upload">
+  <div class="card">
+    <h2>1단계 · 오디오 파일 업로드</h2>
+    <p class="small">발췌음(음원) × 테스트 시스템 매트릭스를 만들고 각 칸에 파일을 넣습니다.
+      지원 형식은 브라우저가 디코딩할 수 있는 모든 오디오(WAV/FLAC/MP3/AAC/OGG 등)입니다.</p>
+    <div class="note" id="excerptAdvice"></div>
+
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn" id="btnAddExcerpt">+ 발췌음 추가</button>
+      <button class="btn" id="btnAddSystem">+ 테스트 시스템 추가</button>
+      <button class="btn sm f-right" id="btnDemo" title="합성 신호로 전체 흐름을 시험합니다">데모 데이터 자동 생성</button>
+    </div>
+
+    <div class="matrix-wrap">
+      <table class="matrix" id="matrix"></table>
+    </div>
+    <p class="small" style="margin-top:8px">
+      시스템 이름은 모든 발췌음이 공유합니다. 이름 칸을 직접 수정할 수 있습니다.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>앵커 설정
+      <span class="term" data-tip="앵커(anchor)는 채점 척도의 눈금을 고정해 주는 기준 신호입니다. 평가자마다 제각각인 점수 사용 습관을 한 줄로 맞춰주는 역할을 합니다.">앵커란?</span>
+    </h2>
+    <div class="grid2" id="anchorCfg"></div>
+    <div class="note">
+      <b>표준 §5.1</b> — 저품질 앵커는 원음의 3.5 kHz 저역통과 필터 버전, 중간품질 앵커는 7 kHz입니다.
+      3.5 kHz 필터 규격: 통과대역 리플 ≤ 0.1 dB, 4 kHz에서 ≥ 25 dB 감쇠, 4.5 kHz에서 ≥ 50 dB 감쇠.
+      <br><b>표준 §10.2 / Attachment 5</b> — 비표준(커스텀) 앵커를 쓰면 그 사실과 생성 방법을 리포트에 반드시 명시해야 합니다.
+      이 앱은 앵커의 표준/커스텀 여부를 결과 화면과 CSV·JSON에 자동으로 기록합니다.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>음량 정렬 설정</h2>
+    <div class="row">
+      <label>측정 방식
+        <select id="loudMethod">
+          <option value="lufs">통합 라우드니스 (ITU-R BS.1770 K-weighting, 게이팅 적용)</option>
+          <option value="rms">RMS 레벨 (간이)</option>
+        </select>
+      </label>
+      <label>기준 레벨
+        <input type="number" id="targetLevel" value="-23" step="0.5" style="width:80px"> <span id="targetUnit" class="small">LUFS</span>
+      </label>
+    </div>
+    <p class="small">모든 파일을 같은 기준 레벨로 맞춰 상대 음량 차이를 제거합니다. 2단계에서 자동 실행됩니다.</p>
+  </div>
+
+  <div class="card">
+    <div class="spread">
+      <div id="uploadStatus" class="small"></div>
+      <button class="btn primary" id="btnToProcess" disabled>2단계 · 자동 처리 시작 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2단계: 자동 처리 ============ -->
+<section class="sec" id="sec-process">
+  <div class="card">
+    <h2>2단계 · 자동 처리</h2>
+    <div class="progress"><i id="procBar"></i></div>
+    <div id="procLog" class="small" style="font-family:ui-monospace,Menlo,monospace; white-space:pre-wrap; max-height:180px; overflow:auto"></div>
+  </div>
+
+  <div class="card" id="cardAnchorResult">
+    <h2>생성된 앵커 &amp; 필터 규격 검증</h2>
+    <div id="anchorResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>음량 정렬 결과</h2>
+    <div class="note warn" id="levelWarning"></div>
+    <div class="tbl-wrap"><table class="data" id="gainTable"></table></div>
+  </div>
+
+  <div class="card">
+    <div class="spread">
+      <div class="small" id="procStatus"></div>
+      <button class="btn primary" id="btnToTraining" disabled>3단계 · 훈련 단계로 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3단계: 훈련 ============ -->
+<section class="sec" id="sec-training">
+  <div class="card" id="cardConsent">
+    <h2>평가자 등록 &amp; 사전 스크리닝
+      <span class="term" data-tip="사전 스크리닝(pre-screening): 표준 §4.1.1은 정상 청력과 비판적 청취 경험을 가진 평가자를 요구합니다. 웹앱은 이를 검증할 수 없어 자기신고 방식으로 기록합니다.">사전 스크리닝?</span>
+    </h2>
+    <div class="row">
+      <label>평가자 이름 / ID <input type="text" id="raterId" placeholder="예: 홍길동 또는 P01"></label>
+    </div>
+    <label class="chk"><input type="checkbox" id="chkHearing"> 저는 정상적인 청력을 가지고 있습니다. <span class="small">(표준 §4.1.1, ISO 389 참고)</span></label>
+    <label class="chk"><input type="checkbox" id="chkCritical"> 저는 소리를 비판적으로 듣는 경험이 있습니다. <span class="small">(음향 관련 업무 / 취미 경험)</span></label>
+    <div class="note warn">이 두 항목은 소프트웨어가 검증할 수 없습니다. <b>자기신고</b>로 기록되며 결과 파일에 그대로 저장됩니다.</div>
+    <div class="row">
+      <label>재생 장치
+        <select id="transducer">
+          <option value="headphones">헤드폰</option>
+          <option value="loudspeakers">스피커</option>
+        </select>
+      </label>
+      <span class="small">표준 §8: 한 테스트 안에서 모든 평가자는 같은 종류의 장치를 써야 합니다.</span>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="btnStartTraining" disabled>훈련 단계 시작 →</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="cardTraining">
+    <h2>훈련용 자유 청취</h2>
+    <div id="trainingGrids"></div>
+    <div class="note" style="margin-top:14px">
+      표준 Attachment 1 — “훈련 단계의 목적은 (A) 테스트에 나올 모든 발췌음과 그 품질 범위에 익숙해지고,
+      (B) 재생·채점 장비 사용법을 익히는 것입니다. 훈련 단계에서 매긴 점수는 본 테스트에 반영되지 않습니다.”
+      <br>또한 지금 재생 볼륨을 본인에게 편안한 수준으로 맞춰두고, <b>테스트가 끝날 때까지 바꾸지 마세요.</b>
+    </div>
+    <div class="spread" style="margin-top:12px">
+      <div class="small" id="trainStatus"></div>
+      <button class="btn primary" id="btnToGrading">훈련 완료, 본 테스트 시작 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4단계: 블라인드 채점 ============ -->
+<section class="sec" id="sec-grading">
+  <div class="card">
+    <div class="spread">
+      <h2 id="trialTitle" style="margin:0">트라이얼</h2>
+      <div class="row tight">
+        <span class="pill info" id="trialCounter"></span>
+        <span class="pill" id="blockPill" style="display:none"></span>
+      </div>
+    </div>
+    <div class="progress"><i id="trialBar"></i></div>
+
+    <div class="prog-row" style="margin-top:10px">
+      <div class="prog" id="prog">
+        <i class="fill" id="progFill"></i>
+        <i class="region" id="progRegion"></i>
+        <i class="head" id="progHead"></i>
+      </div>
+      <div class="prog-time" id="progTime">0:00 / 0:00</div>
+    </div>
+    <div class="wave-legend">
+      <span id="nowPlaying">재생 중: —</span>
+      <span id="loopInfo"></span>
+      <span class="muted">진행 표시줄을 드래그하면 반복 구간을 지정합니다 (최소 500 ms · 표준 §5.3).</span>
+    </div>
+    <div class="row tight" style="margin-top:8px">
+      <button class="btn" id="btnStop">■ 정지</button>
+      <button class="btn" id="btnLoopToggle">🔁 구간 반복: 켜짐</button>
+      <button class="btn sm" id="btnLoopReset">구간 전체로</button>
+      <button class="btn" id="btnOpenRef" style="border-color:var(--c-ref); color:var(--c-ref)">▶ 열린 레퍼런스 (Ref)</button>
+      <span class="small term" data-tip="열린 레퍼런스: 원음이라는 것을 알고 듣는 대조군입니다. 채점 대상이 아니며, 언제든 비교용으로 들을 수 있습니다.">열린 레퍼런스란?</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>채점 <span class="term" data-tip="CQS(Continuous Quality Scale, 연속 품질 척도): 0~100의 연속 눈금을 Excellent/Good/Fair/Poor/Bad 다섯 구간으로 나눈 표준 채점 척도입니다 (표준 §5.4).">CQS 0–100</span>
+      <span class="small">— 평가 속성: <b>기본 음질(Basic Audio Quality)</b> (표준 §6)</span>
+    </h2>
+    <div class="small">각 항목의 <b>▶ 재생</b>을 눌러야 그 항목의 슬라이더가 활성화됩니다 (표준 Attachment 2).</div>
+    <div class="grade-area" id="gradeArea"></div>
+    <div class="spread">
+      <div class="small" id="gradeStatus"></div>
+      <button class="btn primary" id="btnNextTrial" disabled>점수 등록 후 다음 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5단계: 결과 ============ -->
+<section class="sec" id="sec-results">
+  <div class="card">
+    <div class="spread">
+      <h2 style="margin:0">5단계 · 결과 &amp; 사후 스크리닝</h2>
+      <div class="row tight">
+        <button class="btn" id="btnDlJson">⬇ 내 결과 JSON</button>
+        <button class="btn" id="btnDlCsv">⬇ 전체 원자료 CSV</button>
+        <button class="btn" id="btnGoMerge">여러 평가자 결과 합치기 →</button>
+      </div>
+    </div>
+    <div id="datasetInfo" class="small"></div>
+  </div>
+
+  <div class="card">
+    <h2>사후 스크리닝 <span class="term" data-tip="사후 스크리닝(post-screening, 표준 §4.1.2): 히든 레퍼런스를 원음으로 인식하지 못했거나 중간 앵커를 원음급으로 평가한 평가자를 집계에서 제외합니다.">post-screening</span></h2>
+    <div id="screenResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>시스템별 종합 결과 (모든 발췌음 통합)</h2>
+    <div class="small">표준 §9.1 / §10.3 — 중앙값과 IQR(사분위수 범위)을 박스플롯으로 표시합니다. 통과한 평가자만 집계됩니다.</div>
+    <div id="chartPooled"></div>
+    <div id="tablePooled"></div>
+  </div>
+
+  <div class="card">
+    <h2>발췌음 × 시스템 결과</h2>
+    <div id="chartPerExcerpt"></div>
+  </div>
+
+  <div class="card">
+    <h2>추가 통계 (표준 §9 · Attachment 3)</h2>
+    <div class="row">
+      <button class="btn" id="btnPerm">비모수 유의성 검정 실행 (permutation, 10 000회)</button>
+      <span class="small">시스템 쌍마다 중앙값 차이가 우연히 생길 확률(p)을 재표집으로 계산합니다.</span>
+    </div>
+    <div id="permResult"></div>
+    <div id="statExtra"></div>
+  </div>
+
+  <div class="card">
+    <h2>이상치 점검 (표준 §4.1.2)</h2>
+    <div id="outlierResult"></div>
+  </div>
+</section>
+
+<!-- ============ 결과 합치기 ============ -->
+<section class="sec" id="sec-merge">
+  <div class="card">
+    <h2>여러 평가자 결과 합치기</h2>
+    <p class="small">각 평가자가 5단계에서 내려받은 JSON 파일을 한 번에 선택하세요. 같은 평가자 ID는 최신 파일로 덮어씁니다.</p>
+    <input type="file" id="mergeFiles" accept=".json,application/json" multiple>
+    <div id="mergeLog" class="small" style="margin-top:10px"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="btnMergeApply" disabled>합쳐서 결과 보기 →</button>
+      <button class="btn" id="btnMergeClear">불러온 파일 비우기</button>
+      <button class="btn" id="btnBackResults">← 결과 화면으로</button>
+    </div>
+  </div>
+</section>
+
+</div><!-- /wrap -->
+
+<div class="tip" id="tip"></div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   0. 유틸
+   ========================================================================== */
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const el = (tag, attrs, ...kids) => {
+  const n = document.createElement(tag);
+  if (attrs) for (const k in attrs) {
+    if (k === 'class') n.className = attrs[k];
+    else if (k === 'html') n.innerHTML = attrs[k];
+    else if (k === 'text') n.textContent = attrs[k];
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), attrs[k]);
+    else if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) n.setAttribute(k, attrs[k]);
+  }
+  for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false)
+    n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  return n;
+};
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const fmt = (v, d = 1) => (v === null || v === undefined || Number.isNaN(v)) ? '—' : v.toFixed(d);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function shuffle(arr, rnd = Math.random) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function download(name, mime, data) {
+  const blob = new Blob([data], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = el('a', { href: url, download: name });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+/* ==========================================================================
+   1. 통계 (표준 §4.1.2, §9, Attachment 3)
+   ========================================================================== */
+const Stat = {
+  // 표준 §4.1.2 정의 그대로: n 홀수면 중앙값 포함해서 반쪽을 나눈다
+  median(x) {
+    if (!x.length) return null;
+    const a = x.slice().sort((p, q) => p - q), n = a.length;
+    return n % 2 ? a[(n - 1) / 2] : (a[n / 2 - 1] + a[n / 2]) / 2;
+  },
+  quartiles(x) {
+    if (!x.length) return { q1: null, q2: null, q3: null, iqr: null };
+    const a = x.slice().sort((p, q) => p - q), n = a.length, m = Stat.median;
+    let lower, upper;
+    if (n % 2) { lower = a.slice(0, (n + 1) / 2); upper = a.slice((n - 1) / 2); }
+    else       { lower = a.slice(0, n / 2);       upper = a.slice(n / 2); }
+    const q1 = m(lower), q3 = m(upper);
+    return { q1, q2: m(a), q3, iqr: q3 - q1, min: a[0], max: a[n - 1] };
+  },
+  mean(x) { return x.length ? x.reduce((s, v) => s + v, 0) / x.length : null; },
+  sd(x) {
+    if (x.length < 2) return null;
+    const m = Stat.mean(x);
+    return Math.sqrt(x.reduce((s, v) => s + (v - m) ** 2, 0) / (x.length - 1));
+  },
+  // 표준 §9.1: 중앙값 주변 오차 = 평균절대편차
+  mad(x) { const m = Stat.median(x); return x.length ? x.reduce((s, v) => s + Math.abs(v - m), 0) / x.length : null; },
+  // 표준 §4.1.2: 1.5 × IQR 밖 = 이상치
+  outliers(x) {
+    const { q1, q3, iqr } = Stat.quartiles(x);
+    if (q1 === null) return { lo: null, hi: null, idx: [] };
+    const lo = q1 - 1.5 * iqr, hi = q3 + 1.5 * iqr;
+    return { lo, hi, idx: x.map((v, i) => (v < lo || v > hi) ? i : -1).filter(i => i >= 0) };
+  },
+  // 표준 §9.1: 다봉성 계수 b = (g²+1)/(k + 3(n-1)²/((n-2)(n-3))),  b > 5/9 이면 다봉 의심
+  multimodality(x) {
+    const n = x.length;
+    if (n < 4) return null;
+    const m = Stat.mean(x), s = Stat.sd(x);
+    if (!s) return null;
+    const g = x.reduce((a, v) => a + ((v - m) / s) ** 3, 0) / n;
+    const k = x.reduce((a, v) => a + ((v - m) / s) ** 4, 0) / n - 3;
+    return (g * g + 1) / (k + 3 * (n - 1) ** 2 / ((n - 2) * (n - 3)));
+  },
+  // 표준 §9.1: 비모수 분석 시 부트스트랩으로 평균의 95% 신뢰구간
+  bootstrapCI(x, iters = 2000, stat = Stat.mean) {
+    if (x.length < 2) return { lo: null, hi: null };
+    const out = new Float64Array(iters), n = x.length;
+    for (let it = 0; it < iters; it++) {
+      const s = new Array(n);
+      for (let i = 0; i < n; i++) s[i] = x[(Math.random() * n) | 0];
+      out[it] = stat(s);
+    }
+    const a = Array.from(out).sort((p, q) => p - q);
+    return { lo: a[Math.floor(0.025 * iters)], hi: a[Math.floor(0.975 * iters) - 1] };
+  },
+  // 표준 Attachment 3 (Normative): 두 표본 중앙값 차이의 재표집 유의성 검정
+  permutationTest(x1, x2, iters = 10000) {
+    const n1 = x1.length, n2 = x2.length;
+    if (n1 < 2 || n2 < 2) return null;
+    const actual = Math.abs(Stat.median(x1) - Stat.median(x2));
+    const pool = x1.concat(x2), N = n1 + n2;
+    let ge = 0;
+    const buf = pool.slice();
+    for (let it = 0; it < iters; it++) {
+      for (let i = N - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = buf[i]; buf[i] = buf[j]; buf[j] = t; }
+      const d = Math.abs(Stat.median(buf.slice(0, n1)) - Stat.median(buf.slice(n1)));
+      if (d >= actual) ge++;
+    }
+    return { actual, p: ge / iters, iters };
+  }
+};
+
+/* ==========================================================================
+   2. 오디오 엔진
+   ========================================================================== */
+let AC = null;
+function ac() {
+  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+
+/* ---- 2.1 바이쿼드 (직접형 I, double) ---- */
+function biquadRun(x, s) {
+  const y = new Float32Array(x.length);
+  let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+  for (let i = 0; i < x.length; i++) {
+    const xn = x[i];
+    const yn = s.b0 * xn + s.b1 * x1 + s.b2 * x2 - s.a1 * y1 - s.a2 * y2;
+    x2 = x1; x1 = xn; y2 = y1; y1 = yn;
+    y[i] = yn;
+  }
+  return y;
+}
+function cascadeRun(x, sections) { let y = x; for (const s of sections) y = biquadRun(y, s); return y; }
+// 디지털 섹션의 |H(f)| (dB)
+function sectionMagDb(sections, f, fs) {
+  const w = 2 * Math.PI * f / fs, c1 = Math.cos(w), s1 = Math.sin(w), c2 = Math.cos(2 * w), s2 = Math.sin(2 * w);
+  let db = 0;
+  for (const s of sections) {
+    const nr = s.b0 + s.b1 * c1 + s.b2 * c2, ni = -(s.b1 * s1 + s.b2 * s2);
+    const dr = 1 + s.a1 * c1 + s.a2 * c2,   di = -(s.a1 * s1 + s.a2 * s2);
+    db += 10 * Math.log10((nr * nr + ni * ni) / (dr * dr + di * di));
+  }
+  return db;
+}
+/* 아날로그 2차 저역통과 H(s)=W²/(s²+(W/Q)s+W²) 를 쌍선형 변환.
+   모든 섹션에 같은 변환 상수 K=2·fs 를 써야 캐스케이드 형상(리플)이 보존된다. */
+function bilinearLP(W, Q, fs) {
+  const K = 2 * fs;
+  const A = K * K, B = (W / Q) * K, C = W * W;
+  const a0 = A + B + C;
+  return {
+    b0: C / a0, b1: 2 * C / a0, b2: C / a0,
+    a1: (2 * C - 2 * A) / a0, a2: (A - B + C) / a0, W, Q
+  };
+}
+/* 체비셰프 I형 저역통과 설계 (통과대역 리플 rippleDb, 짝수 차수) */
+function chebyshev1LP(order, rippleDb, fcHz, fs) {
+  const eps = Math.sqrt(10 ** (rippleDb / 10) - 1);
+  const a = Math.asinh(1 / eps) / order;
+  const sh = Math.sinh(a), ch = Math.cosh(a);
+  const Wa = 2 * fs * Math.tan(Math.PI * Math.min(fcHz, fs * 0.45) / fs);   // fc 프리워핑 (1회)
+  const secs = [];
+  for (let k = 1; k <= order / 2; k++) {
+    const th = (2 * k - 1) * Math.PI / (2 * order);
+    const sigma = -sh * Math.sin(th), omega = ch * Math.cos(th);
+    const wn = Math.hypot(sigma, omega);          // 정규화 극점 반경
+    const Q = wn / (2 * Math.abs(sigma));
+    secs.push(bilinearLP(wn * Wa, Q, fs));
+  }
+  // 각 섹션은 DC 이득 1 → 캐스케이드 DC도 1. 표준 체비셰프 형태(통과대역 최댓값 0 dB,
+  // DC는 −rippleDb)가 되도록 √(1+ε²)로 나눠 통과대역이 0 dB를 넘지 않게 한다.
+  const g = Math.sqrt(1 + eps * eps);
+  secs[0] = { ...secs[0], b0: secs[0].b0 / g, b1: secs[0].b1 / g, b2: secs[0].b2 / g };
+  return secs;
+}
+/* 표준 §5.1 규격을 만족할 때까지 차수를 올린다.
+   fc=3.5k 기준: 리플 ≤0.1 dB, 4 kHz ≥25 dB, 4.5 kHz ≥50 dB (다른 fc는 비율로 환산) */
+function designAnchorFilter(fcHz, fs) {
+  const r1 = 4000 / 3500, r2 = 4500 / 3500;          // 규격 주파수 비율
+  const f1 = fcHz * r1, f2 = fcHz * r2;
+  const spec = { rippleDb: 0.1, f1, f2, att1: 25, att2: 50 };
+  let best = null;
+  for (let order = 8; order <= 24; order += 2) {
+    const secs = chebyshev1LP(order, 0.1, fcHz, fs);
+    // 통과대역 리플
+    let mx = -1e9, mn = 1e9;
+    for (let f = 20; f <= fcHz; f += Math.max(5, fcHz / 400)) {
+      const d = sectionMagDb(secs, f, fs); if (d > mx) mx = d; if (d < mn) mn = d;
+    }
+    const ripple = mx - mn;
+    const a1 = -sectionMagDb(secs, f1, fs), a2 = -sectionMagDb(secs, f2, fs);
+    const res = { order, sections: secs, ripple, att1: a1, att2: a2, spec,
+                  ok: ripple <= 0.105 && a1 >= 25 && a2 >= 50 && f2 < fs / 2 };
+    if (!best) best = res;
+    if (res.ok) return res;
+    if (a2 > best.att2) best = res;
+  }
+  return best;
+}
+/* 앵커 생성: 레퍼런스 버퍼에 저역통과 적용 */
+function makeAnchor(buffer, fcHz) {
+  const fs = buffer.sampleRate;
+  const design = designAnchorFilter(fcHz, fs);
+  const out = ac().createBuffer(buffer.numberOfChannels, buffer.length, fs);
+  for (let c = 0; c < buffer.numberOfChannels; c++) {
+    out.copyToChannel(cascadeRun(buffer.getChannelData(c), design.sections), c);
+  }
+  return { buffer: out, design };
+}
+
+/* ---- 2.2 라우드니스: ITU-R BS.1770 K-weighting + 게이팅 ---- */
+function kWeightSections(fs) {
+  // 1단: 하이셸프
+  let f0 = 1681.974450955533, G = 3.999843853973347, Q = 0.7071752369554196;
+  let K = Math.tan(Math.PI * f0 / fs);
+  const Vh = 10 ** (G / 20), Vb = Vh ** 0.4996667741545416;
+  let a0 = 1 + K / Q + K * K;
+  const s1 = {
+    b0: (Vh + Vb * K / Q + K * K) / a0,
+    b1: 2 * (K * K - Vh) / a0,
+    b2: (Vh - Vb * K / Q + K * K) / a0,
+    a1: 2 * (K * K - 1) / a0,
+    a2: (1 - K / Q + K * K) / a0
+  };
+  // 2단: 고역통과
+  f0 = 38.13547087602444; Q = 0.5003270373238773;
+  K = Math.tan(Math.PI * f0 / fs);
+  a0 = 1 + K / Q + K * K;
+  const s2 = { b0: 1, b1: -2, b2: 1, a1: 2 * (K * K - 1) / a0, a2: (1 - K / Q + K * K) / a0 };
+  return [s1, s2];
+}
+const CH_WEIGHT = [1.0, 1.0, 1.0, 1.41, 1.41];   // L,R,C,Ls,Rs (BS.1770)
+function integratedLUFS(buffer) {
+  const fs = buffer.sampleRate, ks = kWeightSections(fs);
+  const nCh = buffer.numberOfChannels;
+  const filt = [];
+  for (let c = 0; c < nCh; c++) filt.push(cascadeRun(buffer.getChannelData(c), ks));
+  const blockLen = Math.round(0.4 * fs), step = Math.round(0.1 * fs);
+  if (buffer.length < blockLen) return rmsDbfs(buffer) - 3;   // 너무 짧으면 RMS로 대체
+  const powers = [], loud = [];
+  for (let start = 0; start + blockLen <= buffer.length; start += step) {
+    let z = 0;
+    for (let c = 0; c < nCh; c++) {
+      const w = CH_WEIGHT[Math.min(c, 4)], d = filt[c];
+      let s = 0;
+      for (let i = start; i < start + blockLen; i++) s += d[i] * d[i];
+      z += w * (s / blockLen);
+    }
+    powers.push(z);
+    loud.push(-0.691 + 10 * Math.log10(z + 1e-20));
+  }
+  const absKeep = powers.filter((_, i) => loud[i] > -70);
+  if (!absKeep.length) return -Infinity;
+  const absMean = absKeep.reduce((a, b) => a + b, 0) / absKeep.length;
+  const relGate = -0.691 + 10 * Math.log10(absMean + 1e-20) - 10;
+  const keep = powers.filter((_, i) => loud[i] > -70 && loud[i] > relGate);
+  if (!keep.length) return -Infinity;
+  const m = keep.reduce((a, b) => a + b, 0) / keep.length;
+  return -0.691 + 10 * Math.log10(m + 1e-20);
+}
+function rmsDbfs(buffer) {
+  let s = 0, n = 0;
+  for (let c = 0; c < buffer.numberOfChannels; c++) {
+    const d = buffer.getChannelData(c);
+    for (let i = 0; i < d.length; i++) s += d[i] * d[i];
+    n += d.length;
+  }
+  return 10 * Math.log10(s / n + 1e-20);
+}
+function peakDbfs(buffer) {
+  let p = 0;
+  for (let c = 0; c < buffer.numberOfChannels; c++) {
+    const d = buffer.getChannelData(c);
+    for (let i = 0; i < d.length; i++) { const v = Math.abs(d[i]); if (v > p) p = v; }
+  }
+  return 20 * Math.log10(p + 1e-20);
+}
+
+/* ---- 2.3 재생기: 5 ms 레이즈드코사인 페이드, 크로스페이드 금지 ---- */
+const FADE = 0.005;                       // 표준 §5.3
+const RC_IN = (() => { const n = 64, a = new Float32Array(n);
+  for (let i = 0; i < n; i++) a[i] = 0.5 * (1 - Math.cos(Math.PI * i / (n - 1))); return a; })();
+const RC_OUT = (() => { const n = 64, a = new Float32Array(n);
+  for (let i = 0; i < n; i++) a[i] = 0.5 * (1 + Math.cos(Math.PI * i / (n - 1))); return a; })();
+
+const Player = {
+  key: null, item: null, timer: null, nodes: [], master: null,
+  nextStart: 0, region: null, loop: true, onTick: null, startCtxTime: 0,
+
+  _master() {
+    if (!this.master) { this.master = ac().createGain(); this.master.gain.value = 1; this.master.connect(ac().destination); }
+    return this.master;
+  },
+  /** item: {key, buffer, gainDb}, region: [a,b] 초 */
+  play(item, region, loop) {
+    const ctx = ac();
+    const stopAt = this._stopInternal();                     // 현재 항목 완전 종료 시각
+    this.key = item.key; this.item = item;
+    this.loop = loop !== undefined ? loop : this.loop;
+    const dur = item.buffer.duration;
+    let [a, b] = region || [0, dur];
+    a = clamp(a, 0, dur); b = clamp(b, a + 0.02, dur);
+    this.region = [a, b];
+    this.nextStart = Math.max(ctx.currentTime + 0.02, stopAt + FADE);  // 겹침 없이 이어서 시작
+    this.startCtxTime = this.nextStart;
+    this._fill();
+    if (this.timer) clearInterval(this.timer);
+    this.timer = setInterval(() => this._fill(), 60);
+    return this.nextStart;
+  },
+  _fill() {
+    const ctx = ac(), [a, b] = this.region, seg = b - a;
+    const horizon = ctx.currentTime + 0.4;
+    while (this.nextStart < horizon) {
+      this._schedule(this.nextStart, a, seg);
+      this.nextStart += seg;
+      if (!this.loop) { clearInterval(this.timer); this.timer = null; break; }
+    }
+  },
+  _schedule(t0, offset, seg) {
+    const ctx = ac();
+    const src = ctx.createBufferSource(); src.buffer = this.item.buffer;
+    const g = ctx.createGain();
+    const lin = 10 ** ((this.item.gainDb || 0) / 20);
+    const f = Math.min(FADE, seg / 3);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.setValueCurveAtTime(Float32Array.from(RC_IN, v => v * lin), t0, f);
+    g.gain.setValueAtTime(lin, t0 + f);
+    g.gain.setValueCurveAtTime(Float32Array.from(RC_OUT, v => v * lin), t0 + seg - f, f);
+    src.connect(g).connect(this._master());
+    src.start(t0, offset, seg);
+    src.stop(t0 + seg + 0.001);
+    const rec = { src, g, end: t0 + seg };
+    this.nodes.push(rec);
+    src.onended = () => { this.nodes = this.nodes.filter(n => n !== rec); try { g.disconnect(); } catch (e) {} };
+  },
+  _stopInternal() {
+    const ctx = ac();
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+    let latest = ctx.currentTime;
+    for (const n of this.nodes) {
+      const t = ctx.currentTime;
+      try {
+        n.g.gain.cancelScheduledValues(t);
+        const cur = n.g.gain.value;
+        n.g.gain.setValueAtTime(cur, t);
+        n.g.gain.setValueCurveAtTime(Float32Array.from(RC_OUT, v => v * cur), t, FADE);   // 5 ms 페이드아웃
+        n.src.stop(t + FADE + 0.001);
+      } catch (e) { try { n.src.stop(); } catch (e2) {} }
+      latest = Math.max(latest, t + FADE);
+    }
+    this.nodes = [];
+    return latest;                                    // 다음 항목은 이 시각 이후에만 시작 → 크로스페이드 없음
+  },
+  stop() { this._stopInternal(); this.key = null; this.item = null; if (this.onTick) this.onTick(); },
+  isPlaying() { return this.nodes.length > 0; },
+  /** 현재 재생 위치(초, 버퍼 기준). 없으면 null */
+  position() {
+    if (!this.item || !this.region) return null;
+    const t = ac().currentTime, [a, b] = this.region, seg = b - a;
+    if (t < this.startCtxTime) return a;
+    const off = (t - this.startCtxTime) % seg;
+    if (!this.loop && t - this.startCtxTime > seg) return null;
+    return a + off;
+  }
+};
+/* ==========================================================================
+   3. 상태
+   ========================================================================== */
+const S = {
+  step: 1,
+  sessionId: 'S' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+  systems: [],            // [{id,name}]
+  excerpts: [],           // [{id,name,ref,files:{sysId:{...}},anchors:{low,mid}}]
+  targetLevel: -23,
+  loudMethod: 'lufs',
+  rater: { id: '', normalHearing: false, criticalListening: false, transducer: 'headphones' },
+  items: {},              // excerptId -> [{key,kind,sysId,label,buffer,gainDb,manualDb,measured,anchorSpec}]
+  trials: [],             // [{excerptId, blockIndex, blockCount, items:[itemKey...]}]
+  trialPos: 0,
+  ratings: [],            // 이번 세션의 원자료
+  merged: [],             // 합치기로 불러온 세션들
+  perTrialState: null
+};
+let _sid = 0, _eid = 0;
+const newSysId = () => 'sys' + (++_sid);
+const newExcId = () => 'exc' + (++_eid);
+
+const STEPS = [
+  { n: 1, id: 'upload',   name: '업로드',   sec: 'sec-upload',
+    banner: '<b>지금은 1단계 · 파일 업로드입니다.</b> 비교할 발췌음(음원)과 테스트 시스템(예: 귀마개 종류) 조합을 모두 등록합니다. MUSHRA는 “같은 음원을 여러 시스템으로 처리한 결과”를 한 화면에서 직접 비교하는 방법이라, 발췌음 × 시스템 매트릭스가 빠짐없이 채워져야 합니다.' },
+  { n: 2, id: 'process',  name: '자동 처리', sec: 'sec-process',
+    banner: '<b>지금은 2단계 · 자동 처리입니다.</b> 모든 파일의 음량을 같은 기준으로 맞추고(음량 차이가 음질 판단을 오염시키는 것을 막습니다), 레퍼런스로부터 저품질·중간품질 <span class="term" data-tip="앵커(anchor): 척도의 아래쪽 눈금을 고정하는 기준 신호. 없으면 평가자마다 점수 범위가 제각각이 됩니다.">앵커</span>를 자동 생성합니다.' },
+  { n: 3, id: 'training', name: '훈련',     sec: 'sec-training',
+    banner: '<b>지금은 3단계 · 훈련 단계입니다.</b> 본 테스트 전에 나올 수 있는 모든 소리를 자유롭게, 몇 번이든 들어보면서 전체적인 음질 범위에 익숙해지는 단계입니다. 여기서는 점수를 매기지 않으며, 어떤 기록도 남지 않습니다. (표준 §5.2 — 훈련은 필수입니다)' },
+  { n: 4, id: 'grading',  name: '블라인드 채점', sec: 'sec-grading',
+    banner: '<b>지금은 4단계 · 블라인드 채점입니다.</b> 각 트라이얼에는 <span class="term" data-tip="히든 레퍼런스(hidden reference): 원음이 이름표 없이 섞여 있는 것. 평가자가 원음을 원음으로 알아보는지 확인하는 장치입니다.">히든 레퍼런스</span>·저품질 앵커·중간품질 앵커·모든 테스트 시스템이 익명으로 섞여 있습니다. 순서는 매 세션마다 무작위입니다.' },
+  { n: 5, id: 'results',  name: '결과',     sec: 'sec-results',
+    banner: '<b>지금은 5단계 · 결과입니다.</b> 먼저 <span class="term" data-tip="사후 스크리닝(post-screening, 표준 §4.1.2): 신뢰하기 어려운 평가자를 집계에서 제외하는 절차.">사후 스크리닝</span>으로 이 평가자의 데이터를 집계에 넣을지 판정하고, 통과한 데이터만으로 중앙값·IQR 통계를 냅니다.' },
+  { n: 6, id: 'merge',    name: '합치기',   sec: 'sec-merge',
+    banner: '<b>여러 평가자 결과 합치기.</b> 각자 내려받은 JSON을 모아 한 데이터셋으로 만듭니다. 표준 §4.2는 통제된 조건에서 20명 이하로도 충분한 경우가 많다고 봅니다.' }
+];
+
+function renderSteps() {
+  const nav = $('#steps'); nav.innerHTML = '';
+  for (const st of STEPS) {
+    if (st.n === 6) continue;
+    const cls = S.step === st.n ? 'step-chip active' : (S.step > st.n ? 'step-chip done' : 'step-chip');
+    nav.appendChild(el('div', { class: cls }, el('span', { class: 'n', text: String(st.n) }), st.name));
+  }
+}
+function goStep(n) {
+  S.step = n;
+  const st = STEPS.find(s => s.n === n);
+  $$('.sec').forEach(s => s.classList.remove('on'));
+  $('#' + st.sec).classList.add('on');
+  $('#banner').innerHTML = st.banner;
+  renderSteps();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ==========================================================================
+   4. 1단계 · 업로드 UI
+   ========================================================================== */
+function newAnchorCfg(kind) {
+  return { kind, mode: 'auto', cutoff: kind === 'low' ? 3500 : 7000, file: null, buffer: null, design: null };
+}
+function addExcerpt(name) {
+  const id = newExcId();
+  S.excerpts.push({
+    id, name: name || ('발췌음 ' + (S.excerpts.length + 1)),
+    ref: null, files: {},
+    anchors: { low: newAnchorCfg('low'), mid: newAnchorCfg('mid') }
+  });
+  renderMatrix();
+}
+function addSystem(name) {
+  const id = newSysId();
+  S.systems.push({ id, name: name || ('시스템 ' + String.fromCharCode(64 + S.systems.length + 1)) });
+  renderMatrix();
+}
+
+async function decodeFile(file) {
+  const buf = await file.arrayBuffer();
+  const audio = await ac().decodeAudioData(buf);
+  return { name: file.name, buffer: audio, size: file.size };
+}
+function fileCell(getObj, setObj, label) {
+  const box = el('div', { class: 'cell-file' });
+  const drop = el('div', { class: 'drop' });
+  const input = el('input', { type: 'file', accept: 'audio/*', class: 'hidden' });
+  const info = el('div', { class: 'fname' });
+  const paint = () => {
+    const o = getObj();
+    if (o && o.buffer) {
+      drop.className = 'drop filled';
+      drop.textContent = '✓ 파일 있음 (교체하려면 클릭)';
+      info.textContent = `${o.name} · ${o.buffer.duration.toFixed(1)}s · ${o.buffer.numberOfChannels}ch · ${o.buffer.sampleRate}Hz`;
+    } else {
+      drop.className = 'drop';
+      drop.textContent = '＋ ' + (label || '파일 선택 / 끌어놓기');
+      info.textContent = '';
+    }
+  };
+  const take = async (file) => {
+    if (!file) return;
+    drop.textContent = '디코딩 중…';
+    try { setObj(await decodeFile(file)); }
+    catch (e) { alert('디코딩 실패: ' + file.name + '\n' + e.message); setObj(null); }
+    paint(); renderMatrix();
+  };
+  drop.addEventListener('click', () => input.click());
+  input.addEventListener('change', e => take(e.target.files[0]));
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('dragover'); take(e.dataTransfer.files[0]); });
+  box.append(drop, input, info);
+  paint();
+  return box;
+}
+
+function renderMatrix() {
+  const t = $('#matrix'); t.innerHTML = '';
+  const head = el('tr', null, el('th', { text: '발췌음 (음원)' }),
+    el('th', null, el('span', { class: 'term', 'data-tip': '레퍼런스(reference): 처리되지 않은 원음. 채점 기준이자 앵커 생성의 원본이며, 이름표 없이 섞여 “히든 레퍼런스” 역할도 합니다.', text: '레퍼런스 (원음) *' })));
+  for (const sys of S.systems) {
+    const th = el('th');
+    const nameIn = el('input', { type: 'text', value: sys.name, style: 'width:120px',
+      oninput: e => { sys.name = e.target.value; } });
+    const del = el('button', { class: 'btn sm danger', title: '이 시스템 삭제',
+      onclick: () => { S.systems = S.systems.filter(s => s !== sys);
+        S.excerpts.forEach(x => delete x.files[sys.id]); renderMatrix(); }, text: '✕' });
+    th.append(nameIn, ' ', del);
+    head.appendChild(th);
+  }
+  t.appendChild(el('thead', null, head));
+
+  const body = el('tbody');
+  for (const ex of S.excerpts) {
+    const tr = el('tr');
+    const tdName = el('td', { class: 'exc' });
+    const nameIn = el('input', { type: 'text', value: ex.name, style: 'width:120px',
+      oninput: e => { ex.name = e.target.value; renderAnchorCfg(); } });
+    const del = el('button', { class: 'btn sm danger',
+      onclick: () => { S.excerpts = S.excerpts.filter(x => x !== ex); renderMatrix(); }, text: '✕' });
+    tdName.append(nameIn, ' ', del);
+    tr.appendChild(tdName);
+    tr.appendChild(el('td', null, fileCell(() => ex.ref, v => { ex.ref = v; }, '레퍼런스 업로드')));
+    for (const sys of S.systems) {
+      tr.appendChild(el('td', null, fileCell(() => ex.files[sys.id], v => { ex.files[sys.id] = v; }, sys.name)));
+    }
+    body.appendChild(tr);
+  }
+  t.appendChild(body);
+  renderAnchorCfg();
+  validateUpload();
+}
+
+function renderAnchorCfg() {
+  const host = $('#anchorCfg'); host.innerHTML = '';
+  for (const ex of S.excerpts) {
+    const card = el('div', { class: 'card', style: 'margin:0' });
+    card.appendChild(el('h3', { text: ex.name }));
+    for (const kind of ['low', 'mid']) {
+      const a = ex.anchors[kind];
+      const isLow = kind === 'low';
+      const wrap = el('div', { style: 'margin:8px 0 14px' });
+      wrap.appendChild(el('div', null,
+        el('b', { text: isLow ? '로우 앵커 (저품질 기준)' : '미드 앵커 (중간품질 기준)' }),
+        ' ',
+        el('span', { class: 'pill ' + (a.mode === 'auto' ? 'ok' : 'warn'),
+          text: a.mode === 'auto' ? '표준 앵커' : '커스텀(비표준) 앵커' })));
+      wrap.appendChild(el('div', { class: 'small', text: isLow
+        ? '레퍼런스를 일부러 심하게 열화시킨 “최하위 기준 신호”입니다. 채점 척도의 아래쪽 눈금을 고정해주는 역할을 하며, ITU-R BS.1534 표준은 3.5 kHz 저역통과 필터를 권장합니다.'
+        : '척도의 중간 눈금을 고정하는 기준 신호입니다. 표준 기본값은 7 kHz 저역통과입니다.' }));
+
+      const sel = el('select', { onchange: e => { a.mode = e.target.value; renderAnchorCfg(); validateUpload(); } },
+        el('option', { value: 'auto', selected: a.mode === 'auto' }, '자동 생성 (표준 저역통과 필터)'),
+        el('option', { value: 'custom', selected: a.mode === 'custom' }, '직접 업로드 (커스텀 앵커)'));
+      const row = el('div', { class: 'row tight', style: 'margin-top:6px' }, sel);
+      if (a.mode === 'auto') {
+        row.append(el('label', { class: 'small' }, '컷오프 ',
+          el('input', { type: 'number', value: a.cutoff, step: 100, style: 'width:88px',
+            oninput: e => { a.cutoff = +e.target.value || a.cutoff; } }), ' Hz'));
+      }
+      wrap.appendChild(row);
+      if (a.mode === 'custom') {
+        wrap.appendChild(fileCell(() => a.file, v => { a.file = v; }, '커스텀 앵커 업로드'));
+        wrap.appendChild(el('div', { class: 'note warn', html:
+          'ITU-R BS.1534 Attachment 5는 앵커가 <b>테스트 대상과 유사한 성격의 왜곡</b>을 갖도록 설계할 것을 권장합니다(로우–미드 앵커 점수 차이 20–30점, 내용 의존성 최소화 등). 커스텀 앵커를 쓰면 표준 §10.2에 따라 <b>그 사실과 생성 방법을 리포트에 명시</b>해야 하며, 이 앱은 결과·CSV·JSON에 자동으로 표시합니다.' }));
+      }
+      card.appendChild(wrap);
+    }
+    host.appendChild(card);
+  }
+  if (!S.excerpts.length) host.appendChild(el('p', { class: 'small', text: '발췌음을 먼저 추가하세요.' }));
+}
+
+function validateUpload() {
+  const nSys = S.systems.length, nExc = S.excerpts.length;
+  const need = Math.max(5, Math.ceil(nSys * 1.5));
+  const adv = $('#excerptAdvice');
+  let advHtml = `<b>표준 §7.1</b> — 발췌음 개수는 “시스템 개수 × 1.5, 최소 5개”를 권장합니다. ` +
+                `현재 시스템 ${nSys}개 → 권장 발췌음 <b>${need}개</b>, 현재 <b>${nExc}개</b>. `;
+  if (nSys && nExc < need) advHtml += `<span class="pill warn">권장치 미달 — 진행은 가능하지만 리포트에 사유를 남기세요</span>`;
+  else if (nSys) advHtml += `<span class="pill ok">권장치 충족</span>`;
+  adv.innerHTML = advHtml;
+  adv.className = 'note' + (nSys && nExc < need ? ' warn' : '');
+
+  const missing = [];
+  for (const ex of S.excerpts) {
+    if (!ex.ref) missing.push(`${ex.name}: 레퍼런스 없음`);
+    for (const sys of S.systems) if (!ex.files[sys.id]) missing.push(`${ex.name} × ${sys.name}: 파일 없음`);
+    for (const k of ['low', 'mid']) {
+      const a = ex.anchors[k];
+      if (a.mode === 'custom' && !a.file) missing.push(`${ex.name}: ${k === 'low' ? '로우' : '미드'} 커스텀 앵커 파일 없음`);
+    }
+  }
+  // 길이 점검 (표준 §5.1: 약 10초, 최대 12초 권장)
+  const durs = [];
+  for (const ex of S.excerpts) {
+    if (ex.ref) durs.push(ex.ref.buffer.duration);
+    for (const sys of S.systems) if (ex.files[sys.id]) durs.push(ex.files[sys.id].buffer.duration);
+  }
+  const lenNotes = [];
+  if (durs.length) {
+    const mn = Math.min(...durs), mx = Math.max(...durs);
+    if (mx > 12.5) lenNotes.push(`가장 긴 파일이 ${mx.toFixed(1)}초입니다. ITU-R BS.1534 §5.1은 발췌음 길이를 약 10초(최대 12초)로 권장합니다 — 길면 평가자 피로와 순서 효과(primacy/recency)가 커집니다.`);
+    if (mx - mn > 0.5) lenNotes.push(`파일 길이가 서로 다릅니다 (${mn.toFixed(1)}–${mx.toFixed(1)}초). 같은 발췌음 안에서는 길이를 맞추는 것이 좋습니다.`);
+  }
+  const ok = nExc > 0 && nSys > 0 && missing.length === 0;
+  const st = $('#uploadStatus');
+  st.innerHTML = ok
+    ? `<span class="pill ok">준비 완료</span> 발췌음 ${nExc} × 시스템 ${nSys} + 레퍼런스/앵커 = 트라이얼당 ${nSys + 3}개 신호.`
+      + (nSys + 3 > 12 ? ` <span class="pill warn">12개 초과 → 블록 설계(blocked design)로 자동 분할됩니다 (표준 §5.3)</span>` : '')
+      + lenNotes.map(n => `<div class="note warn" style="margin-top:6px">${n}</div>`).join('')
+    : `<span class="pill bad">미완료</span> ${missing.length ? esc(missing.slice(0, 4).join(' · ')) + (missing.length > 4 ? ` 외 ${missing.length - 4}건` : '') : '발췌음과 시스템을 추가하세요.'}`;
+  $('#btnToProcess').disabled = !ok;
+}
+
+/* ---- 데모 데이터 (합성 신호로 전체 흐름 시험) ---- */
+function synthBuffer(seed, seconds = 6) {
+  const fs = 44100, n = Math.round(fs * seconds), b = ac().createBuffer(2, n, fs);
+  let r = seed * 9301 + 49297;
+  const rnd = () => { r = (r * 9301 + 49297) % 233280; return r / 233280; };
+  const f0 = 110 * (1 + (seed % 3) * 0.5);
+  for (let c = 0; c < 2; c++) {
+    const d = b.getChannelData(c);
+    for (let i = 0; i < n; i++) {
+      const t = i / fs;
+      let v = 0;
+      for (let h = 1; h <= 12; h++) v += Math.sin(2 * Math.PI * f0 * h * t + c) / h;
+      v *= 0.25 * (0.6 + 0.4 * Math.sin(2 * Math.PI * 0.7 * t));
+      v += (rnd() - 0.5) * 0.08;                       // 광대역 성분 (저역통과 차이가 잘 들리게)
+      d[i] = clamp(v * 0.5, -1, 1);
+    }
+  }
+  return { name: `synth_${seed}.wav`, buffer: b, size: 0 };
+}
+function degrade(src, cutoff, noise) {
+  const fs = src.buffer.sampleRate;
+  const design = designAnchorFilter(cutoff, fs);
+  const out = ac().createBuffer(src.buffer.numberOfChannels, src.buffer.length, fs);
+  for (let c = 0; c < src.buffer.numberOfChannels; c++) {
+    const y = cascadeRun(src.buffer.getChannelData(c), design.sections);
+    for (let i = 0; i < y.length; i++) y[i] = clamp(y[i] * 0.9 + (Math.random() - 0.5) * noise, -1, 1);
+    out.copyToChannel(y, c);
+  }
+  return { name: 'demo.wav', buffer: out, size: 0 };
+}
+function buildDemo() {
+  S.systems = []; S.excerpts = []; _sid = 0; _eid = 0;
+  ['귀마개 A', '귀마개 B', '귀마개 C'].forEach(n => addSystem(n));
+  ['클래식', '팝', '음성'].forEach((n, i) => {
+    addExcerpt(n);
+    const ex = S.excerpts[i];
+    ex.ref = synthBuffer(i + 1, 6);
+    S.systems.forEach((sys, j) => { ex.files[sys.id] = degrade(ex.ref, 16000 - j * 5000, 0.01 * (j + 1)); });
+  });
+  renderMatrix();
+}
+/* ==========================================================================
+   5. 2단계 · 자동 처리 (앵커 생성 + 음량 정렬)
+   ========================================================================== */
+const KIND_LABEL = { ref: '레퍼런스(히든)', low: '로우 앵커', mid: '미드 앵커', sys: '테스트 시스템' };
+function sysName(id) { const s = S.systems.find(x => x.id === id); return s ? s.name : id; }
+function logProc(msg) {
+  const box = $('#procLog');
+  box.textContent += msg + '\n';
+  box.scrollTop = box.scrollHeight;
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function runProcessing() {
+  $('#procLog').textContent = '';
+  $('#btnToTraining').disabled = true;
+  S.items = {};
+  S.targetLevel = parseFloat($('#targetLevel').value);
+  S.loudMethod = $('#loudMethod').value;
+  const unit = S.loudMethod === 'lufs' ? 'LUFS' : 'dBFS(RMS)';
+
+  const tasks = [];
+  for (const ex of S.excerpts) {
+    tasks.push({ ex, kind: 'ref' });
+    for (const sys of S.systems) tasks.push({ ex, kind: 'sys', sysId: sys.id });
+    tasks.push({ ex, kind: 'low' }); tasks.push({ ex, kind: 'mid' });
+  }
+  let done = 0;
+  const anchorInfo = [];
+
+  for (const t of tasks) {
+    const ex = t.ex;
+    if (!S.items[ex.id]) S.items[ex.id] = [];
+    let src = null, anchorSpec = null, design = null;
+
+    if (t.kind === 'ref') src = ex.ref;
+    else if (t.kind === 'sys') src = ex.files[t.sysId];
+    else {
+      const a = ex.anchors[t.kind];
+      if (a.mode === 'auto') {
+        logProc(`[앵커] ${ex.name} · ${t.kind === 'low' ? '로우' : '미드'} — ${a.cutoff} Hz 저역통과 생성 중…`);
+        await sleep(0);
+        const made = makeAnchor(ex.ref.buffer, a.cutoff);
+        a.buffer = made.buffer; a.design = made.design; design = made.design;
+        src = { name: `auto_${t.kind}_${a.cutoff}Hz`, buffer: made.buffer };
+        anchorSpec = 'standard';
+        anchorInfo.push({ ex, kind: t.kind, cutoff: a.cutoff, design: made.design, spec: 'standard' });
+      } else {
+        src = a.file; a.buffer = a.file.buffer;
+        anchorSpec = 'custom';
+        anchorInfo.push({ ex, kind: t.kind, cutoff: null, design: null, spec: 'custom', file: a.file.name });
+      }
+    }
+
+    const measured = S.loudMethod === 'lufs' ? integratedLUFS(src.buffer) : rmsDbfs(src.buffer);
+    const peak = peakDbfs(src.buffer);
+    const key = `${ex.id}|${t.kind}${t.sysId ? ':' + t.sysId : ''}`;
+    S.items[ex.id].push({
+      key, excerptId: ex.id, excerptName: ex.name, kind: t.kind, sysId: t.sysId || null,
+      label: t.kind === 'sys' ? sysName(t.sysId) : KIND_LABEL[t.kind],
+      fileName: src.name, buffer: src.buffer, measured, peak,
+      autoGainDb: 0, manualDb: 0, gainDb: 0, anchorSpec, design
+    });
+    logProc(`[측정] ${ex.name} · ${t.kind === 'sys' ? sysName(t.sysId) : KIND_LABEL[t.kind]} = ${fmt(measured, 1)} ${unit} (peak ${fmt(peak, 1)} dBFS)`);
+    done++;
+    $('#procBar').style.width = (100 * done / tasks.length) + '%';
+    await sleep(0);
+  }
+
+  // 게인 계산 + 클리핑 방지용 전역 헤드룸 (상대 관계는 유지)
+  const all = Object.values(S.items).flat();
+  let worst = -Infinity;
+  for (const it of all) {
+    it.autoGainDb = Number.isFinite(it.measured) ? S.targetLevel - it.measured : 0;
+    worst = Math.max(worst, it.peak + it.autoGainDb);
+  }
+  const headroom = worst > -1 ? -(worst + 1) : 0;      // 최대 피크를 -1 dBFS로
+  for (const it of all) { it.autoGainDb += headroom; it.gainDb = it.autoGainDb + it.manualDb; }
+  if (headroom !== 0) logProc(`[헤드룸] 클리핑 방지를 위해 모든 항목에 ${fmt(headroom, 1)} dB를 동일하게 적용 (상대 음량 관계는 그대로).`);
+
+  renderAnchorResult(anchorInfo);
+  renderGainTable();
+  $('#levelWarning').innerHTML =
+    '<b>절대 음압 레벨에 대한 한계 안내 (표준 §8)</b><br>' +
+    '이 자동 정렬은 <b>파일 간 상대적 음량 차이만</b> 맞춰줍니다. 표준이 요구하는 절대 음압 레벨(정렬 신호 기준 78 ± 0.25 dBA)은 브라우저가 측정할 수 없으므로, ' +
+    '실제 재생 시 헤드폰/스피커의 전체 볼륨은 평가자가 본인에게 편안하고 일관된 수준으로 직접 맞춰야 합니다. 한 번 맞춘 뒤에는 테스트가 끝날 때까지 바꾸지 마세요. ' +
+    '또한 표준 §7.1은 원래 <b>숙련된 평가자 그룹이 주관적으로 음량을 맞추는 것</b>을 권장하는데, 이 앱의 자동 정렬은 그 과정을 근사적으로 대체하는 것입니다. ' +
+    '개별 항목의 수동 조정은 표준 §8에 따라 ±4 dB 이내로 제한되어 있습니다.';
+  $('#procStatus').innerHTML = `<span class="pill ok">처리 완료</span> 항목 ${all.length}개`;
+  $('#btnToTraining').disabled = false;
+}
+
+function renderAnchorResult(info) {
+  const host = $('#anchorResult'); host.innerHTML = '';
+  if (!info.length) { host.textContent = '앵커 없음'; return; }
+  const tbl = el('table', { class: 'data' });
+  tbl.appendChild(el('thead', null, el('tr', null,
+    ...['발췌음', '앵커', '종류', '컷오프', '필터', '통과대역 리플', '4 kHz 상당 감쇠', '4.5 kHz 상당 감쇠', '규격', '미리듣기']
+      .map(h => el('th', { text: h })))));
+  const tb = el('tbody');
+  for (const a of info) {
+    const d = a.design;
+    const okPill = a.spec === 'custom'
+      ? el('span', { class: 'pill warn', text: '커스텀(비표준)' })
+      : el('span', { class: d && d.ok ? 'pill ok' : 'pill warn', text: d && d.ok ? '표준 규격 충족' : '규격 미달' });
+    const item = (S.items[a.ex.id] || []).find(i => i.kind === a.kind);
+    const btn = el('button', { class: 'btn sm', text: '▶ 듣기',
+      onclick: () => { Player.play(item, null, false); } });
+    const btnRef = el('button', { class: 'btn sm', text: '▶ 원음',
+      onclick: () => { Player.play((S.items[a.ex.id] || []).find(i => i.kind === 'ref'), null, false); } });
+    tb.appendChild(el('tr', null,
+      el('td', { text: a.ex.name }),
+      el('td', { text: a.kind === 'low' ? '로우' : '미드' }),
+      el('td', { text: a.spec === 'custom' ? '직접 업로드' : '자동 생성' }),
+      el('td', { class: 'num', text: a.cutoff ? a.cutoff + ' Hz' : '—' }),
+      el('td', { text: d ? `Chebyshev I · ${d.order}차 (바이쿼드 ${d.sections.length}단)` : (a.file || '—') }),
+      el('td', { class: 'num', text: d ? fmt(d.ripple, 3) + ' dB' : '—' }),
+      el('td', { class: 'num', text: d ? fmt(d.att1, 1) + ' dB' : '—' }),
+      el('td', { class: 'num', text: d ? fmt(d.att2, 1) + ' dB' : '—' }),
+      el('td', null, okPill),
+      el('td', null, btn, ' ', btnRef)));
+  }
+  tbl.appendChild(tb);
+  host.appendChild(el('div', { class: 'tbl-wrap' }, tbl));
+  host.appendChild(el('div', { class: 'note', html:
+    '표준 §5.1의 3.5 kHz 필터 규격(리플 ≤ 0.1 dB · 4 kHz ≥ 25 dB · 4.5 kHz ≥ 50 dB)을 만족하도록 Chebyshev I형 저역통과를 자동 설계합니다. ' +
+    '미드 앵커(7 kHz)에는 같은 형상을 주파수 비율로 환산해 적용하며, 위 표의 “4 kHz 상당”은 컷오프 × 8/7 지점을 뜻합니다.' }));
+}
+
+function renderGainTable() {
+  const t = $('#gainTable'); t.innerHTML = '';
+  const unit = S.loudMethod === 'lufs' ? 'LUFS' : 'dBFS';
+  t.appendChild(el('thead', null, el('tr', null,
+    ...['발췌음', '항목', '측정값 (' + unit + ')', '자동 조정', '수동 미세조정 (±4 dB)', '최종 게인', '미리듣기']
+      .map(h => el('th', { text: h })))));
+  const tb = el('tbody');
+  for (const ex of S.excerpts) {
+    for (const it of S.items[ex.id] || []) {
+      const finalCell = el('td', { class: 'num', text: fmt(it.gainDb, 1) + ' dB' });
+      const val = el('span', { class: 'small', text: fmt(it.manualDb, 1) + ' dB' });
+      const sl = el('input', { type: 'range', min: -4, max: 4, step: 0.1, value: it.manualDb, style: 'width:120px' });
+      sl.addEventListener('input', e => {
+        it.manualDb = parseFloat(e.target.value);
+        it.gainDb = it.autoGainDb + it.manualDb;
+        val.textContent = fmt(it.manualDb, 1) + ' dB';
+        finalCell.textContent = fmt(it.gainDb, 1) + ' dB';
+      });
+      tb.appendChild(el('tr', null,
+        el('td', { text: ex.name }),
+        el('td', null, it.label, it.anchorSpec === 'custom' ? el('span', { class: 'pill warn', text: '커스텀' }) : ''),
+        el('td', { class: 'num', text: fmt(it.measured, 1) }),
+        el('td', { class: 'num', text: fmt(it.autoGainDb, 1) + ' dB' }),
+        el('td', null, sl, ' ', val),
+        finalCell,
+        el('td', null, el('button', { class: 'btn sm', text: '▶', onclick: () => Player.play(it, null, false) }))));
+    }
+  }
+  t.appendChild(tb);
+}
+
+/* ==========================================================================
+   6. 3단계 · 훈련
+   ========================================================================== */
+function buildTraining() {
+  const host = $('#trainingGrids'); host.innerHTML = '';
+  for (const ex of S.excerpts) {
+    const card = el('div', { style: 'margin-bottom:18px' });
+    card.appendChild(el('h3', { text: ex.name }));
+    card.appendChild(el('div', { class: 'small',
+      text: '아래 번호 버튼은 무작위로 섞인 익명 신호입니다 (테스트 시스템 · 앵커 · 원음이 섞여 있습니다). Ref만 원음임을 알려드립니다.' }));
+    const grid = el('div', { class: 'tgrid' });
+    const items = S.items[ex.id];
+    const ref = items.find(i => i.kind === 'ref');
+    const refBtn = el('button', { class: 'tbtn ref', text: 'Ref' });
+    refBtn.addEventListener('click', () => playTrain(refBtn, ref, grid));
+    grid.appendChild(refBtn);
+    shuffle(items).forEach((it, i) => {
+      const b = el('button', { class: 'tbtn', text: String(i + 1) });
+      b.addEventListener('click', () => playTrain(b, it, grid));
+      grid.appendChild(b);
+    });
+    const stop = el('button', { class: 'btn sm', text: '■ 정지', onclick: () => { Player.stop(); $$('.tbtn').forEach(x => x.classList.remove('playing')); } });
+    card.append(grid, el('div', { style: 'margin-top:8px' }, stop));
+    host.appendChild(card);
+  }
+  $('#trainStatus').innerHTML = '<span class="pill">채점 슬라이더 없음</span> 훈련 단계의 청취 기록과 점수는 저장되지 않습니다 (표준 Attachment 1).';
+}
+function playTrain(btn, item, grid) {
+  $$('.tbtn').forEach(x => x.classList.remove('playing'));
+  btn.classList.add('playing');
+  Player.play(item, null, true);
+}
+/* ==========================================================================
+   7. 4단계 · 블라인드 채점
+   ========================================================================== */
+const MAX_SIGNALS_PER_TRIAL = 12;           // 표준 §5.3
+
+function buildTrials() {
+  const trials = [];
+  for (const ex of S.excerpts) {
+    const items = S.items[ex.id];
+    const fixed = ['ref', 'low', 'mid'].map(k => items.find(i => i.kind === k));
+    const sysItems = items.filter(i => i.kind === 'sys');
+    const maxSys = MAX_SIGNALS_PER_TRIAL - fixed.length;          // = 9
+    const nBlocks = Math.max(1, Math.ceil(sysItems.length / maxSys));
+    const perBlock = Math.ceil(sysItems.length / nBlocks);        // 블록 크기 균등 분배
+    const shuffled = shuffle(sysItems);
+    for (let b = 0; b < nBlocks; b++) {
+      const chunk = shuffled.slice(b * perBlock, (b + 1) * perBlock);
+      if (!chunk.length) continue;
+      trials.push({
+        excerptId: ex.id, excerptName: ex.name,
+        blockIndex: nBlocks > 1 ? b + 1 : null, blockCount: nBlocks,
+        items: shuffle(fixed.concat(chunk))                        // 트라이얼 내부 배치 무작위
+      });
+    }
+  }
+  S.trials = shuffle(trials);                                      // 트라이얼 순서도 무작위
+  S.trialPos = 0;
+  S.ratings = [];
+}
+
+/* ---- 재생 진행 표시줄 ----
+   파형(오디오 샘플 시각화)은 의도적으로 그리지 않는다. 파형 모양이 보이면
+   평가자가 소리가 아니라 그림을 보고 판단할 수 있어 MUSHRA 취지에 어긋난다. */
+const mmss = t => (isFinite(t) && t >= 0)
+  ? Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0') : '0:00';
+
+/** 진행바 갱신. item 없으면 비활성 상태로 표시 */
+function drawProgress(item, region, pos) {
+  const fill = $('#progFill'), reg = $('#progRegion'), head = $('#progHead'), time = $('#progTime');
+  if (!item) {
+    fill.style.width = '0%';
+    reg.style.left = '0%'; reg.style.width = '100%';
+    head.style.display = 'none';
+    time.textContent = '0:00 / 0:00';
+    return;
+  }
+  const dur = item.buffer.duration || 1;
+  const a = region ? region[0] : 0, b = region ? region[1] : dur;
+  reg.style.left  = (a / dur * 100) + '%';
+  reg.style.width = ((b - a) / dur * 100) + '%';
+  if (pos === null || pos === undefined) {
+    fill.style.width = '0%';
+    head.style.display = 'none';
+    time.textContent = '0:00 / ' + mmss(dur);
+  } else {
+    fill.style.width = (pos / dur * 100) + '%';
+    head.style.display = 'block';
+    head.style.left = (pos / dur * 100) + '%';
+    time.textContent = mmss(pos) + ' / ' + mmss(dur);
+  }
+}
+
+/* ---- 트라이얼 렌더 ---- */
+const CQS_BANDS = [
+  { lo: 80, hi: 100, name: 'Excellent', ko: '아주 좋음' },
+  { lo: 60, hi: 80,  name: 'Good',      ko: '좋음' },
+  { lo: 40, hi: 60,  name: 'Fair',      ko: '보통' },
+  { lo: 20, hi: 40,  name: 'Poor',      ko: '나쁨' },
+  { lo: 0,  hi: 20,  name: 'Bad',       ko: '아주 나쁨' }
+];
+
+function startGrading() {
+  buildTrials();
+  renderTrial();
+  goStep(4);
+  requestAnimationFrame(tickProgress);
+}
+function curTrial() { return S.trials[S.trialPos]; }
+
+function renderTrial() {
+  const tr = curTrial();
+  const T = S.perTrialState = {
+    played: new Set(), scores: {}, current: null,
+    region: [0, tr.items[0].buffer.duration], loop: true, playCount: {}
+  };
+  $('#trialTitle').textContent = '트라이얼 — 익명 신호 ' + tr.items.length + '개';
+  $('#trialCounter').textContent = `트라이얼 ${S.trialPos + 1} / ${S.trials.length}`;
+  $('#trialBar').style.width = (100 * S.trialPos / S.trials.length) + '%';
+  const bp = $('#blockPill');
+  if (tr.blockIndex) {
+    bp.style.display = ''; bp.className = 'pill warn';
+    bp.textContent = `블록 설계 ${tr.blockIndex}/${tr.blockCount} (표준 §5.3: 트라이얼당 12개 초과 시 분할)`;
+  } else bp.style.display = 'none';
+  $('#btnLoopToggle').textContent = '🔁 구간 반복: 켜짐';
+  updateLoopInfo();
+
+  const area = $('#gradeArea'); area.innerHTML = '';
+  // 척도 라벨
+  const lab = el('div', { class: 'scale-labels' });
+  for (const b of CQS_BANDS) {
+    const mid = (b.lo + b.hi) / 2;
+    lab.appendChild(el('div', { style: `top:${(1 - mid / 100) * 250 + 30}px` },
+      el('b', { text: b.name }), el('br'), el('span', { class: 'small', text: `${b.ko} ${b.lo}–${b.hi}` })));
+  }
+  area.appendChild(lab);
+
+  tr.items.forEach((it, idx) => {
+    const col = el('div', { class: 'sl-col', id: 'col-' + idx });
+    const score = el('div', { class: 'sl-score unrated', text: '미채점' });
+    const track = el('div', { class: 'sl-track' });
+    const sl = el('input', { type: 'range', class: 'vert', min: 0, max: 100, step: 1, value: 50, disabled: 'disabled' });
+    const ticks = el('div', { class: 'sl-ticks' });
+    [0, 20, 40, 60, 80, 100].forEach(v => ticks.appendChild(el('i', { style: `top:${(1 - v / 100) * 100}%` })));
+    track.append(ticks, sl);
+    const play = el('button', { class: 'btn sm sl-play', text: '▶ 재생' });
+    const dot = el('span', { class: 'played-dot' });
+    const name = el('div', { class: 'sl-name' }, `신호 ${idx + 1} `, dot);
+
+    sl.addEventListener('input', e => {
+      if (T.current !== it.key) { e.preventDefault(); sl.value = T.scores[it.key] ?? 50; return; }
+      T.scores[it.key] = +sl.value;
+      score.textContent = sl.value;
+      score.className = 'sl-score';
+      updateGradeStatus();
+    });
+    play.addEventListener('click', () => {
+      T.current = it.key;
+      T.played.add(it.key);
+      T.playCount[it.key] = (T.playCount[it.key] || 0) + 1;
+      dot.className = 'played-dot on';
+      Player.play(it, T.region, T.loop);
+      $('#nowPlaying').textContent = `재생 중: 신호 ${idx + 1}`;
+      $$('.sl-col').forEach(c => c.classList.remove('current'));
+      col.classList.add('current');
+      // 표준 Attachment 2: 지금 듣고 있는 항목의 슬라이더만 조작 가능
+      tr.items.forEach((o, j) => {
+        const s = $('#col-' + j + ' input');
+        s.disabled = (o.key !== it.key);
+      });
+      updateGradeStatus();
+    });
+
+    col.append(score, track, play, name);
+    area.appendChild(col);
+  });
+  updateGradeStatus();
+  drawProgress(tr.items[0], T.region, null);      // 재생 전: 구간과 전체 길이만 표시
+}
+
+function updateLoopInfo() {
+  const T = S.perTrialState;
+  $('#loopInfo').textContent = T ? `반복 구간: ${T.region[0].toFixed(2)}–${T.region[1].toFixed(2)} s (${(T.region[1] - T.region[0]).toFixed(2)} s)` : '';
+}
+function updateGradeStatus() {
+  const tr = curTrial(), T = S.perTrialState;
+  const nPlayed = tr.items.filter(i => T.played.has(i.key)).length;
+  const nScored = tr.items.filter(i => T.scores[i.key] !== undefined).length;
+  const ok = nPlayed === tr.items.length && nScored === tr.items.length;
+  $('#btnNextTrial').disabled = !ok;
+  $('#btnNextTrial').textContent = (S.trialPos === S.trials.length - 1 ? '점수 등록 후 결과 보기 →' : '점수 등록 후 다음 →');
+  $('#gradeStatus').innerHTML =
+    `들어본 신호 <b>${nPlayed}/${tr.items.length}</b> · 점수 매긴 신호 <b>${nScored}/${tr.items.length}</b>` +
+    (ok ? ' <span class="pill ok">다음으로 진행 가능</span>'
+        : ' <span class="pill warn">모든 신호를 한 번 이상 듣고 점수를 매겨야 넘어갑니다</span>');
+}
+function tickProgress() {
+  if (S.step === 4 && S.perTrialState) {
+    const T = S.perTrialState;
+    const it = Player.item || curTrial().items[0];
+    drawProgress(it, T.region, Player.item ? Player.position() : null);
+  }
+  requestAnimationFrame(tickProgress);
+}
+function registerTrial() {
+  const tr = curTrial(), T = S.perTrialState;
+  tr.items.forEach((it, idx) => {
+    S.ratings.push({
+      raterId: S.rater.id,
+      excerptId: it.excerptId, excerptName: it.excerptName,
+      conditionType: it.kind === 'ref' ? 'hidden_reference' : it.kind === 'low' ? 'low_anchor' : it.kind === 'mid' ? 'mid_anchor' : 'system',
+      conditionId: it.sysId || it.kind,
+      conditionLabel: it.label,
+      score: T.scores[it.key],
+      anchorSpec: it.anchorSpec || 'n.a.',
+      trialOrder: S.trialPos + 1,
+      positionInTrial: idx + 1,
+      blockIndex: tr.blockIndex,
+      playCount: T.playCount[it.key] || 0
+    });
+  });
+  Player.stop();
+  S.trialPos++;
+  if (S.trialPos >= S.trials.length) { finishTest(); }
+  else { renderTrial(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+}
+function finishTest() {
+  $('#trialBar').style.width = '100%';
+  const session = buildSession();
+  S.merged = S.merged.filter(m => m.rater.id !== session.rater.id);
+  S.merged.push(session);
+  renderResults();
+  goStep(5);
+}
+/* ==========================================================================
+   8. 세션 직렬화 / 합치기
+   ========================================================================== */
+const FORMAT = 'mushra-bs1534-3';
+function buildSession() {
+  return {
+    format: FORMAT, version: 1, createdAt: new Date().toISOString(), sessionId: S.sessionId,
+    rater: { ...S.rater },
+    config: {
+      targetLevel: S.targetLevel, loudnessMethod: S.loudMethod,
+      transducer: S.rater.transducer,
+      standard: 'ITU-R BS.1534-3', attribute: 'Basic Audio Quality',
+      maxSignalsPerTrial: MAX_SIGNALS_PER_TRIAL,
+      blockedDesign: S.trials.some(t => t.blockIndex !== null)
+    },
+    systems: S.systems.map(s => ({ id: s.id, name: s.name })),
+    excerpts: S.excerpts.map(ex => ({
+      id: ex.id, name: ex.name,
+      durationSec: ex.ref ? +ex.ref.buffer.duration.toFixed(2) : null,
+      referenceFile: ex.ref ? ex.ref.name : null,
+      anchors: ['low', 'mid'].reduce((o, k) => {
+        const a = ex.anchors[k], d = a.design;
+        o[k] = a.mode === 'auto'
+          ? { spec: 'standard', cutoffHz: a.cutoff,
+              filter: d ? `Chebyshev I lowpass, order ${d.order}, 0.1 dB passband ripple` : null,
+              measured: d ? { passbandRippleDb: +d.ripple.toFixed(3), attAt_8over7_fc_dB: +d.att1.toFixed(1), attAt_9over7_fc_dB: +d.att2.toFixed(1), meetsBS1534Spec: !!d.ok } : null }
+          : { spec: 'custom', cutoffHz: null, file: a.file ? a.file.name : null,
+              note: 'Non-standard anchor — ITU-R BS.1534-3 §10.2 requires this to be described in the test report.' };
+        return o;
+      }, {})
+    })),
+    ratings: S.ratings
+  };
+}
+function allRatings() {
+  const out = [];
+  for (const s of S.merged) for (const r of s.ratings) out.push({ ...r, raterId: r.raterId || s.rater.id, _session: s });
+  return out;
+}
+
+/* ==========================================================================
+   9. 사후 스크리닝 (표준 §4.1.2)
+   ========================================================================== */
+function screening() {
+  const rows = allRatings();
+  const raters = [...new Set(rows.map(r => r.raterId))];
+  // 25% 규칙: 특정 발췌음에서 응시자의 25%를 넘는 인원이 미드 앵커에 90점 초과를 주면
+  //           그 발췌음은 미드 앵커 기준에서 제외한다 (앵커가 충분히 열화되지 않았을 가능성).
+  const excerpts = [...new Set(rows.filter(r => r.conditionType === 'mid_anchor').map(r => r.excerptId))];
+  const voided = {};
+  for (const ex of excerpts) {
+    const per = raters.map(rid => rows.some(r => r.raterId === rid && r.excerptId === ex && r.conditionType === 'mid_anchor' && r.score > 90));
+    const frac = per.filter(Boolean).length / Math.max(1, raters.length);
+    voided[ex] = { frac, void: frac > 0.25 };
+  }
+  const result = raters.map(rid => {
+    const mine = rows.filter(r => r.raterId === rid);
+    const refs = mine.filter(r => r.conditionType === 'hidden_reference');
+    const refBad = refs.filter(r => r.score < 90);
+    const c1frac = refs.length ? refBad.length / refs.length : 0;
+    const c1fail = c1frac > 0.15;
+
+    const mids = mine.filter(r => r.conditionType === 'mid_anchor');
+    const midsEligible = mids.filter(r => !voided[r.excerptId].void);
+    const midHigh = midsEligible.filter(r => r.score > 90);
+    const c2fracRaw = mids.length ? mids.filter(r => r.score > 90).length / mids.length : 0;
+    const c2frac = midsEligible.length ? midHigh.length / midsEligible.length : 0;
+    const c2fail = midsEligible.length > 0 && c2frac > 0.15;
+
+    const session = S.merged.find(s => s.rater.id === rid);
+    return {
+      raterId: rid, session,
+      nTrials: refs.length,
+      c1: { n: refBad.length, total: refs.length, frac: c1frac, fail: c1fail },
+      c2: { n: midHigh.length, total: midsEligible.length, frac: c2frac, rawFrac: c2fracRaw,
+            rawN: mids.filter(r => r.score > 90).length, rawTotal: mids.length,
+            excluded: mids.length - midsEligible.length, fail: c2fail },
+      pass: !c1fail && !c2fail
+    };
+  });
+  return { result, voided, raters };
+}
+
+function renderScreening() {
+  const host = $('#screenResult'); host.innerHTML = '';
+  const sc = screening();
+  if (!sc.result.length) { host.innerHTML = '<p class="small">아직 데이터가 없습니다.</p>'; return sc; }
+
+  for (const r of sc.result) {
+    const box = el('div', { class: 'note ' + (r.pass ? 'ok' : 'bad'), style: 'margin-bottom:12px' });
+    box.appendChild(el('div', null,
+      el('b', { text: r.raterId || '(이름 없음)' }), ' ',
+      el('span', { class: r.pass ? 'pill ok' : 'pill bad', text: r.pass ? 'PASS — 집계에 포함' : 'FAIL — 집계에서 제외' }),
+      r.session && r.session.rater ? el('span', { class: 'small', text:
+        `  · 자기신고: 정상청력 ${r.session.rater.normalHearing ? '✓' : '✗'} / 비판적청취경험 ${r.session.rater.criticalListening ? '✓' : '✗'} · ${r.session.rater.transducer === 'headphones' ? '헤드폰' : '스피커'}` }) : ''));
+    box.appendChild(el('div', { class: 'small', style: 'margin-top:6px', html:
+      `<b>기준 1 · 히든 레퍼런스 신뢰도</b> — 90점 미만: ${r.c1.total}개 중 ${r.c1.n}개 (${(r.c1.frac * 100).toFixed(1)}%) → ` +
+      (r.c1.fail ? '<b style="color:var(--critical)">FAIL</b> (원음을 원음으로 제대로 인식하지 못했을 가능성이 있습니다)'
+                 : '<b style="color:var(--good-text)">PASS</b>') + ' <span class="muted">(기준: 15% 초과 시 제외, 표준 §4.1.2)</span>' }));
+    box.appendChild(el('div', { class: 'small', style: 'margin-top:4px', html:
+      `<b>기준 2 · 미드 앵커 변별력</b> — 90점 초과: ${r.c2.total}개 중 ${r.c2.n}개 (${r.c2.total ? (r.c2.frac * 100).toFixed(1) : '—'}%) → ` +
+      (r.c2.fail ? '<b style="color:var(--critical)">FAIL</b>' : '<b style="color:var(--good-text)">PASS</b>') +
+      (r.c2.excluded ? ` <span class="pill warn">발췌음 ${r.c2.excluded}개는 25% 규칙으로 이 기준에서 제외됨</span>` : '') +
+      ` <span class="muted">(원자료 기준 ${r.c2.rawTotal}개 중 ${r.c2.rawN}개)</span>` }));
+    host.appendChild(box);
+  }
+
+  const voidedList = Object.entries(sc.voided).filter(([, v]) => v.void);
+  if (voidedList.length) {
+    const names = voidedList.map(([id, v]) => {
+      const n = (allRatings().find(r => r.excerptId === id) || {}).excerptName || id;
+      return `${n} (${(v.frac * 100).toFixed(0)}%)`;
+    }).join(', ');
+    host.appendChild(el('div', { class: 'note warn', html:
+      `<b>앵커 설계 재검토 필요</b> — 다음 발췌음에서는 응시자의 25%를 넘는 인원이 미드 앵커에 90점 초과를 주었습니다: ${esc(names)}. ` +
+      `표준 §4.1.2는 이 경우 “해당 항목의 점수를 근거로 평가자를 제외하지 말 것”을 요구합니다 — 앵커 처리가 그 음원을 충분히 열화시키지 못했을 가능성이 큽니다. ` +
+      `Attachment 5는 로우–미드 앵커 사이에 약 20–30점의 차이가 나도록 앵커를 설계할 것을 권합니다.` }));
+  }
+  if (sc.raters.length === 1) {
+    host.appendChild(el('div', { class: 'note', html:
+      `<b>평가자가 1명일 때</b> — 기준 2의 25% 규칙은 “응시자 중 몇 %가 그렇게 채점했는가”를 보기 때문에, 혼자 테스트하면 미드 앵커에 90점 초과를 준 발췌음이 자동으로 100% > 25%가 되어 그 항목이 기준에서 빠집니다. ` +
+      `즉 <b>혼자일 때 기준 2는 사실상 참고용 경고</b>로만 작동합니다. 여러 평가자의 결과를 합치면 정상적으로 판정됩니다.` }));
+  }
+  const nPass = sc.result.filter(r => r.pass).length;
+  host.appendChild(el('div', { class: 'small', html:
+    `집계 대상 평가자: <b>${nPass}명</b> / 전체 ${sc.result.length}명. ` +
+    `표준 §4.2는 조건이 잘 통제된 경우 20명 이하로도 충분한 경우가 많다고 봅니다.` }));
+  return sc;
+}
+
+/* ==========================================================================
+   10. 박스플롯 (표준 §9.1 · §10.3)
+   ========================================================================== */
+const tipEl = () => $('#tip');
+function showTip(ev, html) {
+  const t = tipEl(); t.innerHTML = html; t.classList.add('on');
+  const pad = 14;
+  t.style.left = Math.min(window.innerWidth - t.offsetWidth - 8, ev.clientX + pad) + 'px';
+  t.style.top  = Math.min(window.innerHeight - t.offsetHeight - 8, ev.clientY + pad) + 'px';
+}
+function hideTip() { tipEl().classList.remove('on'); }
+
+function boxPlot(groups, opts) {
+  opts = opts || {};
+  const H = opts.height || 340, padT = 18, padB = 74, padL = 46, padR = 14;
+  const bw = opts.boxWidth || 34, gap = opts.gap || 26;
+  const W = Math.max(opts.minWidth || 520, padL + padR + groups.length * (bw + gap));
+  const plotH = H - padT - padB;
+  const y = v => padT + (1 - v / 100) * plotH;
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  svg.setAttribute('role', 'img');
+  const mk = (t, a) => { const n = document.createElementNS(NS, t); for (const k in a) n.setAttribute(k, a[k]); return n; };
+
+  // 하드코딩 없는 색 (테마 토큰)
+  const colorOf = g => g.role === 'ref' ? 'var(--c-ref)' : g.role === 'sys' ? 'var(--c-sys)' : 'var(--c-anchor)';
+
+  // 저품질 앵커용 텍스처(45°) — 색 외 2차 부호화
+  const defs = mk('defs', {});
+  const pat = mk('pattern', { id: 'hatch' + Math.random().toString(36).slice(2, 7), width: 6, height: 6, patternTransform: 'rotate(45)', patternUnits: 'userSpaceOnUse' });
+  pat.appendChild(mk('rect', { width: 6, height: 6, fill: 'var(--c-anchor)', 'fill-opacity': .18 }));
+  pat.appendChild(mk('rect', { width: 2, height: 6, fill: 'var(--c-anchor)', 'fill-opacity': .55 }));
+  defs.appendChild(pat); svg.appendChild(defs);
+  const hatchId = pat.getAttribute('id');
+
+  // 눈금 + CQS 밴드
+  for (let v = 0; v <= 100; v += 20) {
+    svg.appendChild(mk('line', { x1: padL, x2: W - padR, y1: y(v), y2: y(v), stroke: 'var(--grid)', 'stroke-width': 1 }));
+    const t = mk('text', { x: padL - 8, y: y(v) + 4, 'text-anchor': 'end', fill: 'var(--muted)', 'font-size': 11 });
+    t.textContent = v; svg.appendChild(t);
+  }
+  for (const b of CQS_BANDS) {
+    const t = mk('text', { x: padL + 3, y: y((b.lo + b.hi) / 2) + 3, fill: 'var(--muted)', 'font-size': 9.5, 'fill-opacity': .8 });
+    t.textContent = b.name; svg.appendChild(t);
+  }
+  svg.appendChild(mk('line', { x1: padL, x2: W - padR, y1: y(0), y2: y(0), stroke: 'var(--axis)', 'stroke-width': 1 }));
+
+  groups.forEach((g, i) => {
+    const x = padL + 18 + i * (bw + gap);
+    const q = Stat.quartiles(g.values);
+    if (q.q1 === null) return;
+    const { lo, hi } = Stat.outliers(g.values);
+    const inl = g.values.filter(v => v >= lo && v <= hi);
+    const wLo = Math.min(...inl), wHi = Math.max(...inl);
+    const col = colorOf(g);
+    const gEl = mk('g', {});
+    // 수염
+    gEl.appendChild(mk('line', { x1: x + bw / 2, x2: x + bw / 2, y1: y(wHi), y2: y(q.q3), stroke: col, 'stroke-width': 2 }));
+    gEl.appendChild(mk('line', { x1: x + bw / 2, x2: x + bw / 2, y1: y(q.q1), y2: y(wLo), stroke: col, 'stroke-width': 2 }));
+    gEl.appendChild(mk('line', { x1: x + bw * .25, x2: x + bw * .75, y1: y(wHi), y2: y(wHi), stroke: col, 'stroke-width': 2 }));
+    gEl.appendChild(mk('line', { x1: x + bw * .25, x2: x + bw * .75, y1: y(wLo), y2: y(wLo), stroke: col, 'stroke-width': 2 }));
+    // 박스 (IQR)
+    gEl.appendChild(mk('rect', {
+      x, y: y(q.q3), width: bw, height: Math.max(2, y(q.q1) - y(q.q3)), rx: 4,
+      fill: g.role === 'low' ? `url(#${hatchId})` : col, 'fill-opacity': g.role === 'low' ? 1 : .22,
+      stroke: col, 'stroke-width': 2
+    }));
+    // 중앙값
+    gEl.appendChild(mk('line', { x1: x - 2, x2: x + bw + 2, y1: y(q.q2), y2: y(q.q2), stroke: col, 'stroke-width': 3, 'stroke-linecap': 'round' }));
+    // 이상치
+    g.values.filter(v => v < lo || v > hi).forEach(v => {
+      gEl.appendChild(mk('circle', { cx: x + bw / 2, cy: y(v), r: 3.4, fill: 'var(--surface)', stroke: col, 'stroke-width': 2 }));
+    });
+    // 중앙값 직접 라벨
+    const ml = mk('text', { x: x + bw / 2, y: y(q.q3) - 6, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 11.5, 'font-weight': 700 });
+    ml.textContent = fmt(q.q2, 1); gEl.appendChild(ml);
+    // x축 라벨 (2줄까지 줄바꿈)
+    const words = g.label.split(/\s+/); const lines = []; let cur = '';
+    for (const w of words) { if ((cur + ' ' + w).trim().length > 9) { lines.push(cur); cur = w; } else cur = (cur + ' ' + w).trim(); }
+    lines.push(cur);
+    lines.slice(0, 3).forEach((ln, k) => {
+      const t = mk('text', { x: x + bw / 2, y: H - padB + 18 + k * 13, 'text-anchor': 'middle', fill: 'var(--ink-2)', 'font-size': 11 });
+      t.textContent = ln; gEl.appendChild(t);
+    });
+    if (g.sub) {
+      const t = mk('text', { x: x + bw / 2, y: H - padB + 18 + Math.min(3, lines.length) * 13, 'text-anchor': 'middle', fill: 'var(--muted)', 'font-size': 10 });
+      t.textContent = g.sub; gEl.appendChild(t);
+    }
+    // 호버
+    const hit = mk('rect', { x: x - gap / 2, y: padT, width: bw + gap, height: plotH, fill: 'transparent' });
+    hit.addEventListener('mousemove', ev => showTip(ev,
+      `<b>${esc(g.label)}</b><br>중앙값 ${fmt(q.q2, 1)}<br>IQR ${fmt(q.q1, 1)}–${fmt(q.q3, 1)} (폭 ${fmt(q.iqr, 1)})<br>범위 ${fmt(q.min, 1)}–${fmt(q.max, 1)}<br>n = ${g.values.length}`));
+    hit.addEventListener('mouseleave', hideTip);
+    gEl.appendChild(hit);
+    svg.appendChild(gEl);
+  });
+  return svg;
+}
+function chartLegend() {
+  return el('div', { class: 'legend' },
+    el('span', null, el('i', { style: 'background:var(--c-sys)' }), '테스트 시스템'),
+    el('span', null, el('i', { style: 'background:var(--c-ref)' }), '히든 레퍼런스 (원음)'),
+    el('span', null, el('i', { style: 'background:var(--c-anchor)' }), '앵커 (로우=빗금, 미드=단색)'),
+    el('span', { class: 'muted' }, '박스=IQR · 굵은 선=중앙값 · 수염=1.5×IQR 이내 범위 · 원=이상치'));
+}
+
+/* ==========================================================================
+   11. 결과 렌더
+   ========================================================================== */
+function conditionsInOrder(rows) {
+  const sysIds = [...new Set(rows.filter(r => r.conditionType === 'system').map(r => r.conditionId))];
+  const list = [{ id: 'hidden_reference', type: 'hidden_reference', label: '히든 레퍼런스', role: 'ref' }];
+  sysIds.forEach(id => {
+    const lab = (rows.find(r => r.conditionId === id) || {}).conditionLabel || id;
+    list.push({ id, type: 'system', label: lab, role: 'sys' });
+  });
+  list.push({ id: 'mid', type: 'mid_anchor', label: '미드 앵커 (7 kHz)', role: 'mid' });
+  list.push({ id: 'low', type: 'low_anchor', label: '로우 앵커 (3.5 kHz)', role: 'low' });
+  return list;
+}
+function valuesFor(rows, cond, excerptId) {
+  return rows.filter(r =>
+    (cond.type === 'system' ? (r.conditionType === 'system' && r.conditionId === cond.id) : r.conditionType === cond.type) &&
+    (!excerptId || r.excerptId === excerptId)
+  ).map(r => r.score);
+}
+
+function renderResults() {
+  const sc = renderScreening();
+  const rows = allRatings();
+  const passIds = new Set(sc.result.filter(r => r.pass).map(r => r.raterId));
+  const kept = rows.filter(r => passIds.has(r.raterId));
+
+  $('#datasetInfo').innerHTML = S.merged.length
+    ? `데이터셋: 평가자 <b>${S.merged.length}명</b> · 채점 <b>${rows.length}건</b> · 발췌음 ${[...new Set(rows.map(r => r.excerptId))].length}개 · 시스템 ${[...new Set(rows.filter(r => r.conditionType === 'system').map(r => r.conditionId))].length}개`
+    : '데이터가 없습니다. 테스트를 완료하거나 “결과 합치기”에서 JSON을 불러오세요.';
+
+  const pooled = $('#chartPooled'), perEx = $('#chartPerExcerpt'),
+        tbl = $('#tablePooled'), outl = $('#outlierResult'), extra = $('#statExtra');
+  [pooled, perEx, tbl, outl, extra].forEach(n => n.innerHTML = '');
+  $('#permResult').innerHTML = '';
+  if (!kept.length) {
+    pooled.innerHTML = '<p class="note warn">집계 가능한(사후 스크리닝 통과) 평가자 데이터가 없습니다.</p>';
+    return;
+  }
+
+  const conds = conditionsInOrder(kept);
+  const excerpts = [...new Set(kept.map(r => r.excerptId))].map(id => ({
+    id, name: (kept.find(r => r.excerptId === id) || {}).excerptName || id
+  }));
+
+  // --- 통합 박스플롯 ---
+  const groups = conds.map(c => ({ label: c.label, role: c.role, values: valuesFor(kept, c) }));
+  pooled.appendChild(chartLegend());
+  pooled.appendChild(el('div', { class: 'chart' }, boxPlot(groups, { minWidth: 560 })));
+
+  // --- 표 (색 외의 접근 경로) ---
+  const t = el('table', { class: 'data' });
+  t.appendChild(el('thead', null, el('tr', null, ...['조건', '중앙값', 'Q1', 'Q3', 'IQR', '평균', '평균 95% CI (부트스트랩)', '평균절대편차', 'n', '앵커 규격'].map(h => el('th', { text: h })))));
+  const tb = el('tbody');
+  conds.forEach(c => {
+    const v = valuesFor(kept, c);
+    const q = Stat.quartiles(v), ci = Stat.bootstrapCI(v, 2000);
+    let specTxt = '—';
+    if (c.role === 'low' || c.role === 'mid') {
+      const specs = [...new Set(kept.filter(r => r.conditionType === c.type).map(r => r.anchorSpec))];
+      specTxt = specs.includes('custom') ? (specs.length > 1 ? '표준+커스텀 혼재' : '커스텀(비표준)') : '표준';
+    }
+    tb.appendChild(el('tr', null,
+      el('td', { text: c.label }),
+      el('td', { class: 'num', text: fmt(q.q2, 1) }), el('td', { class: 'num', text: fmt(q.q1, 1) }),
+      el('td', { class: 'num', text: fmt(q.q3, 1) }), el('td', { class: 'num', text: fmt(q.iqr, 1) }),
+      el('td', { class: 'num', text: fmt(Stat.mean(v), 1) }),
+      el('td', { class: 'num', text: `${fmt(ci.lo, 1)} – ${fmt(ci.hi, 1)}` }),
+      el('td', { class: 'num', text: fmt(Stat.mad(v), 1) }),
+      el('td', { class: 'num', text: v.length }),
+      el('td', null, specTxt === '표준' ? el('span', { class: 'pill ok', text: '표준' })
+        : specTxt === '—' ? '—' : el('span', { class: 'pill warn', text: specTxt }))));
+  });
+  t.appendChild(tb);
+  tbl.appendChild(el('div', { class: 'tbl-wrap' }, t));
+
+  // 앵커 간격 점검 (Attachment 5 #5)
+  const lowM = Stat.median(valuesFor(kept, conds.find(c => c.role === 'low')));
+  const midM = Stat.median(valuesFor(kept, conds.find(c => c.role === 'mid')));
+  if (lowM !== null && midM !== null) {
+    const d = midM - lowM;
+    tbl.appendChild(el('div', { class: 'note' + (d >= 20 && d <= 30 ? ' ok' : ' warn'), html:
+      `<b>앵커 간격 점검 (Attachment 5)</b> — 로우 앵커 중앙값 ${fmt(lowM, 1)}, 미드 앵커 중앙값 ${fmt(midM, 1)}, 차이 <b>${fmt(d, 1)}점</b>. ` +
+      (d >= 20 && d <= 30 ? '표준이 권장하는 20–30점 범위 안에 있습니다.'
+                          : '표준은 두 앵커 사이 약 20–30점 차이를 권장합니다. 벗어나면 앵커 설계나 음원 선택을 재검토하세요.') }));
+  }
+
+  // --- 발췌음별 스몰 멀티플 ---
+  perEx.appendChild(chartLegend());
+  const wrap = el('div', { style: 'display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:16px' });
+  for (const ex of excerpts) {
+    const g = conds.map(c => ({ label: c.label, role: c.role, values: valuesFor(kept, c, ex.id) }));
+    const specs = [...new Set(kept.filter(r => r.excerptId === ex.id && (r.conditionType === 'low_anchor' || r.conditionType === 'mid_anchor')).map(r => r.anchorSpec))];
+    const badge = specs.includes('custom')
+      ? el('span', { class: 'pill warn', text: '커스텀 앵커 사용' })
+      : el('span', { class: 'pill ok', text: '표준 앵커' });
+    wrap.appendChild(el('div', { class: 'card', style: 'margin:0' },
+      el('h3', null, ex.name, ' ', badge),
+      el('div', { class: 'chart' }, boxPlot(g, { minWidth: 320, height: 300, boxWidth: 24, gap: 18 }))));
+  }
+  perEx.appendChild(wrap);
+
+  // --- 다봉성 / 분포 진단 ---
+  const diag = el('table', { class: 'data' });
+  diag.appendChild(el('thead', null, el('tr', null, ...['조건', '다봉성 계수 b', '해석'].map(h => el('th', { text: h })))));
+  const dtb = el('tbody');
+  conds.forEach(c => {
+    const b = Stat.multimodality(valuesFor(kept, c));
+    dtb.appendChild(el('tr', null, el('td', { text: c.label }),
+      el('td', { class: 'num', text: b === null ? '—(n<4)' : fmt(b, 3) }),
+      el('td', { text: b === null ? '' : (b > 5 / 9 ? '다봉 분포 의심 — 하위집단을 나눠 분석 권장 (표준 §9.1)' : '단봉 분포로 볼 수 있음') })));
+  });
+  diag.appendChild(dtb);
+  extra.appendChild(el('h3', { text: '분포 진단 (표준 §9.1)' }));
+  extra.appendChild(el('div', { class: 'tbl-wrap' }, diag));
+
+  // --- 이상치 (표준 §4.1.2) ---
+  const ot = el('table', { class: 'data' });
+  ot.appendChild(el('thead', null, el('tr', null, ...['발췌음', '조건', '평가자', '점수', '허용 범위 (Q±1.5·IQR)'].map(h => el('th', { text: h })))));
+  const otb = el('tbody');
+  let nOut = 0;
+  for (const ex of excerpts) for (const c of conds) {
+    const rs = kept.filter(r => (c.type === 'system' ? (r.conditionType === 'system' && r.conditionId === c.id) : r.conditionType === c.type) && r.excerptId === ex.id);
+    const vals = rs.map(r => r.score);
+    if (vals.length < 4) continue;
+    const { lo, hi, idx } = Stat.outliers(vals);
+    idx.forEach(i => {
+      nOut++;
+      otb.appendChild(el('tr', { class: 'flag' }, el('td', { text: ex.name }), el('td', { text: c.label }),
+        el('td', { text: rs[i].raterId }), el('td', { class: 'num', text: fmt(vals[i], 1) }),
+        el('td', { class: 'num', text: `${fmt(lo, 1)} – ${fmt(hi, 1)}` })));
+    });
+  }
+  ot.appendChild(otb);
+  outl.appendChild(el('div', { class: 'note', html:
+    '표준 §4.1.2는 조건 × 음원별로 <b>Q1 − 1.5·IQR</b> ~ <b>Q3 + 1.5·IQR</b> 밖의 점수를 이상치로 보고, <b>자동 삭제하지 말고 원인을 조사</b>하라고 규정합니다(장비 문제·조작 실수 등이 확인될 때만 제거하고 리포트에 사유를 남깁니다). 아래 목록은 참고용 표시일 뿐 집계에서 빠지지 않았습니다.' }));
+  outl.appendChild(nOut ? el('div', { class: 'tbl-wrap' }, ot) : el('p', { class: 'small', text: '표시할 이상치가 없습니다 (조건별 n ≥ 4인 경우에만 계산).' }));
+}
+
+/* ---- 유의성 검정 (Attachment 3) ---- */
+function runPermutation() {
+  const host = $('#permResult'); host.innerHTML = '<p class="small">계산 중…</p>';
+  setTimeout(() => {
+    const sc = screening();
+    const passIds = new Set(sc.result.filter(r => r.pass).map(r => r.raterId));
+    const kept = allRatings().filter(r => passIds.has(r.raterId));
+    const conds = conditionsInOrder(kept);
+    const rowsOut = [];
+    for (let i = 0; i < conds.length; i++) for (let j = i + 1; j < conds.length; j++) {
+      const a = valuesFor(kept, conds[i]), b = valuesFor(kept, conds[j]);
+      const res = Stat.permutationTest(a, b, 10000);
+      if (res) rowsOut.push({ a: conds[i].label, b: conds[j].label, diff: Stat.median(a) - Stat.median(b), p: res.p });
+    }
+    host.innerHTML = '';
+    if (!rowsOut.length) { host.innerHTML = '<p class="small">표본이 부족합니다 (조건당 2개 이상 필요).</p>'; return; }
+    const t = el('table', { class: 'data' });
+    t.appendChild(el('thead', null, el('tr', null, ...['조건 A', '조건 B', '중앙값 차이 (A−B)', 'p', '판정 (α = .05)'].map(h => el('th', { text: h })))));
+    const tb = el('tbody');
+    rowsOut.sort((x, y) => x.p - y.p).forEach(r => {
+      tb.appendChild(el('tr', null, el('td', { text: r.a }), el('td', { text: r.b }),
+        el('td', { class: 'num', text: fmt(r.diff, 1) }),
+        el('td', { class: 'num', text: r.p < 0.0001 ? '<0.0001' : r.p.toFixed(4) }),
+        el('td', null, r.p < 0.05 ? el('span', { class: 'pill ok', text: '유의한 차이' }) : el('span', { class: 'pill', text: '차이 불확실' }))));
+    });
+    t.appendChild(tb);
+    host.appendChild(el('div', { class: 'tbl-wrap' }, t));
+    host.appendChild(el('div', { class: 'note', html:
+      '표준 Attachment 3(Normative) 방식 — 두 조건의 점수를 한데 모아 10 000회 무작위 재분할하고, 실제 중앙값 차이 이상이 나온 비율을 p로 씁니다. ' +
+      '다중 비교를 하고 있으므로 엄밀한 결론에는 Bonferroni/Hochberg 보정이나 rmANOVA(Attachment 4)를 함께 쓰세요.' }));
+  }, 30);
+}
+
+/* ==========================================================================
+   12. 내보내기 / 합치기
+   ========================================================================== */
+function csvEscape(v) {
+  const s = String(v ?? '');
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function exportCsv() {
+  const sc = screening();
+  const passMap = {}; sc.result.forEach(r => passMap[r.raterId] = r.pass);
+  const head = ['raterId', 'passedPostScreening', 'normalHearing', 'criticalListening', 'transducer',
+    'excerptId', 'excerptName', 'conditionType', 'conditionId', 'conditionLabel', 'score',
+    'anchorSpec', 'trialOrder', 'positionInTrial', 'blockIndex', 'playCount',
+    'targetLevel', 'loudnessMethod', 'sessionId', 'createdAt'];
+  const lines = [head.join(',')];
+  for (const s of S.merged) for (const r of s.ratings) {
+    lines.push([r.raterId || s.rater.id, passMap[r.raterId || s.rater.id] ? 'pass' : 'fail',
+      s.rater.normalHearing, s.rater.criticalListening, s.rater.transducer,
+      r.excerptId, r.excerptName, r.conditionType, r.conditionId, r.conditionLabel, r.score,
+      r.anchorSpec, r.trialOrder, r.positionInTrial, r.blockIndex ?? '', r.playCount ?? '',
+      s.config.targetLevel, s.config.loudnessMethod, s.sessionId, s.createdAt].map(csvEscape).join(','));
+  }
+  download(`mushra_raw_${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv;charset=utf-8', '﻿' + lines.join('\n'));
+}
+function exportJson() {
+  const s = S.merged.find(m => m.rater.id === S.rater.id) || buildSession();
+  download(`mushra_${(s.rater.id || 'rater').replace(/[^\w가-힣-]/g, '_')}_${s.sessionId}.json`,
+    'application/json', JSON.stringify(s, null, 2));
+}
+
+let mergeStaging = [];
+function handleMergeFiles(files) {
+  const log = $('#mergeLog'); log.innerHTML = '';
+  let pending = files.length;
+  if (!pending) return;
+  Array.from(files).forEach(f => {
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const j = JSON.parse(rd.result);
+        if (j.format !== FORMAT) throw new Error('MUSHRA 결과 파일 형식이 아닙니다');
+        if (!Array.isArray(j.ratings) || !j.ratings.length) throw new Error('채점 데이터가 비어 있습니다');
+        mergeStaging = mergeStaging.filter(m => m.rater.id !== j.rater.id);
+        mergeStaging.push(j);
+        log.appendChild(el('div', null, el('span', { class: 'pill ok', text: 'OK' }), ` ${esc(f.name)} — 평가자 “${esc(j.rater.id)}”, 채점 ${j.ratings.length}건`));
+      } catch (e) {
+        log.appendChild(el('div', null, el('span', { class: 'pill bad', text: '실패' }), ` ${esc(f.name)} — ${esc(e.message)}`));
+      }
+      if (--pending === 0) {
+        $('#btnMergeApply').disabled = mergeStaging.length === 0;
+        log.appendChild(el('div', { class: 'small', style: 'margin-top:6px', text: `불러온 평가자: ${mergeStaging.length}명` }));
+      }
+    };
+    rd.readAsText(f);
+  });
+}
+function applyMerge() {
+  for (const s of mergeStaging) {
+    S.merged = S.merged.filter(m => m.rater.id !== s.rater.id);
+    S.merged.push(s);
+  }
+  mergeStaging = [];
+  $('#btnMergeApply').disabled = true;
+  renderResults();
+  goStep(5);
+}
+
+/* ==========================================================================
+   13. 배선 / 초기화
+   ========================================================================== */
+$('#btnAddExcerpt').addEventListener('click', () => addExcerpt());
+$('#btnAddSystem').addEventListener('click', () => addSystem());
+$('#btnDemo').addEventListener('click', () => { ac(); buildDemo(); });
+$('#loudMethod').addEventListener('change', e => {
+  S.loudMethod = e.target.value;
+  $('#targetUnit').textContent = e.target.value === 'lufs' ? 'LUFS' : 'dBFS (RMS)';
+});
+$('#btnToProcess').addEventListener('click', async () => { goStep(2); await runProcessing(); });
+$('#btnToTraining').addEventListener('click', () => { goStep(3); });
+
+const consentCheck = () => {
+  $('#btnStartTraining').disabled = !($('#raterId').value.trim() && $('#chkHearing').checked && $('#chkCritical').checked);
+};
+['#raterId', '#chkHearing', '#chkCritical'].forEach(s => $(s).addEventListener('input', consentCheck));
+$('#chkHearing').addEventListener('change', consentCheck);
+$('#chkCritical').addEventListener('change', consentCheck);
+$('#btnStartTraining').addEventListener('click', () => {
+  S.rater = {
+    id: $('#raterId').value.trim(),
+    normalHearing: $('#chkHearing').checked,
+    criticalListening: $('#chkCritical').checked,
+    transducer: $('#transducer').value
+  };
+  $('#cardConsent').classList.add('hidden');
+  $('#cardTraining').classList.remove('hidden');
+  buildTraining();
+});
+$('#btnToGrading').addEventListener('click', () => { Player.stop(); startGrading(); });
+
+$('#btnStop').addEventListener('click', () => { Player.stop(); $('#nowPlaying').textContent = '재생 중: —'; });
+$('#btnLoopToggle').addEventListener('click', e => {
+  const T = S.perTrialState; T.loop = !T.loop;
+  e.target.textContent = '🔁 구간 반복: ' + (T.loop ? '켜짐' : '꺼짐');
+  if (Player.item) Player.play(Player.item, T.region, T.loop);
+});
+$('#btnLoopReset').addEventListener('click', () => {
+  const T = S.perTrialState;
+  T.region = [0, curTrial().items[0].buffer.duration];
+  updateLoopInfo();
+  if (Player.item) Player.play(Player.item, T.region, T.loop);
+});
+$('#btnOpenRef').addEventListener('click', () => {
+  const T = S.perTrialState;
+  const ref = S.items[curTrial().excerptId].find(i => i.kind === 'ref');
+  T.current = null;                                     // 열린 레퍼런스는 채점 대상이 아님
+  $$('.sl-col').forEach(c => c.classList.remove('current'));
+  $$('.sl-col input').forEach(s => s.disabled = true);
+  Player.play({ ...ref, key: 'open-ref' }, T.region, T.loop);
+  $('#nowPlaying').textContent = '재생 중: 열린 레퍼런스 (Ref · 채점 대상 아님)';
+});
+$('#btnNextTrial').addEventListener('click', registerTrial);
+
+// 진행 표시줄 드래그로 반복 구간 지정 (최소 500 ms · 표준 §5.3)
+(() => {
+  const cv = $('#prog');
+  let dragging = false, x0 = 0;
+  const posToSec = clientX => {
+    const r = cv.getBoundingClientRect();
+    const it = Player.item || (S.perTrialState && curTrial().items[0]);
+    if (!it) return 0;
+    return clamp((clientX - r.left) / r.width, 0, 1) * it.buffer.duration;
+  };
+  const down = e => {
+    if (!S.perTrialState) return;
+    dragging = true; x0 = posToSec(e.clientX ?? e.touches[0].clientX); e.preventDefault();
+  };
+  const move = e => {
+    if (!dragging) return;
+    const x1 = posToSec(e.clientX ?? e.touches[0].clientX);
+    const T = S.perTrialState;
+    T.region = [Math.min(x0, x1), Math.max(x0, x1)];
+    updateLoopInfo();
+  };
+  const up = () => {
+    if (!dragging) return;
+    dragging = false;
+    const T = S.perTrialState;
+    const dur = (Player.item || curTrial().items[0]).buffer.duration;
+    if (T.region[1] - T.region[0] < 0.5) {            // 최소 루프 500 ms 강제
+      const c = (T.region[0] + T.region[1]) / 2;
+      T.region = [clamp(c - 0.25, 0, dur - 0.5), clamp(c + 0.25, 0.5, dur)];
+      $('#loopInfo').textContent += '  ← 500 ms 미만은 표준상 허용되지 않아 자동 확장했습니다';
+    }
+    updateLoopInfo();
+    if (Player.item) Player.play(Player.item, T.region, T.loop);
+  };
+  cv.addEventListener('mousedown', down); window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+  cv.addEventListener('touchstart', down, { passive: false });
+  cv.addEventListener('touchmove', move, { passive: false });
+  cv.addEventListener('touchend', up);
+})();
+
+$('#btnDlJson').addEventListener('click', exportJson);
+$('#btnDlCsv').addEventListener('click', exportCsv);
+$('#btnGoMerge').addEventListener('click', () => goStep(6));
+$('#btnBackResults').addEventListener('click', () => goStep(5));
+$('#mergeFiles').addEventListener('change', e => handleMergeFiles(e.target.files));
+$('#btnMergeApply').addEventListener('click', applyMerge);
+$('#btnMergeClear').addEventListener('click', () => { mergeStaging = []; $('#mergeLog').innerHTML = ''; $('#btnMergeApply').disabled = true; $('#mergeFiles').value = ''; });
+$('#btnPerm').addEventListener('click', runPermutation);
+$('#targetLevel').addEventListener('input', e => { S.targetLevel = parseFloat(e.target.value); });
+
+window.addEventListener('beforeunload', e => {
+  if (S.ratings.length && S.step >= 4) { e.preventDefault(); e.returnValue = ''; }
+});
+
+// 시작 상태: 발췌음 1 · 시스템 A/B
+addSystem('시스템 A'); addSystem('시스템 B');
+addExcerpt();
+goStep(1);
+
+</script>
+</body>
+</html>

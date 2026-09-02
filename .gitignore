@@ -1,0 +1,7 @@
+# ITU-R spec PDF (copyrighted, local reference only)
+*.pdf
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+.DS_Store
